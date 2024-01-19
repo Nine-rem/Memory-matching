@@ -10,14 +10,21 @@
 
 
 /* ----------------------------------------------------------------------------------------------------------------
-	Variables globales
+	Variables globales et structures
 ---------------------------------------------------------------------------------------------------------------- */
 
-#define WINDOW_WIDTH 1200
+#define WINDOW_WIDTH 1256
 #define WINDOW_HEIGHT 900
 #define CARD_WIDTH_HEIGHT 206
 #define NAME_WIDTH 440
 #define LABEL_HEIGHT 69
+
+// Structure carte
+typedef struct {
+    SDL_Texture *card_image;
+    int card_number, card_revealed, card_x, card_y;
+} Card;
+
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -33,6 +40,7 @@ void SDL_clear_level_texture(SDL_Texture *texture_level_1, SDL_Texture *texture_
 void SDL_clear_back_texture(SDL_Texture *texture_back);
 void SDL_clear_renderer(SDL_Renderer *renderer);
 void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, int x, int y);
+void create_cards(Card *cards, SDL_Texture **textures);
 int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max);
 void shuffle(int rows, int columns, int game_board[rows][columns]);
 
@@ -281,18 +289,15 @@ int memory_game()
 	// Matrices représentant le plateau de jeu
 	int game_board_size = 0;
 
-	int game_board_level_1[4][4] = {
-			{1, 1, 2, 2},
-			{3, 3, 4, 4},
-			{5, 5, 6, 6},
-			{7, 7, 8, 8}
-		};
+	int game_board_level_1[2][6] = {
+		{1, 1, 2, 2, 3, 3},
+		{4, 4, 5, 5, 6, 6}
+	};
 
-	int game_board_level_2[4][5] = {
-		{1, 1, 2, 2, 3},
-		{3, 4, 4, 5, 5},
-		{6, 6, 7, 7, 8},
-		{8, 9, 9, 10, 10}
+	int game_board_level_2[3][6] = {
+		{1, 1, 2, 2, 3, 3},
+		{4, 4, 5, 5, 6, 6},
+		{7, 7, 8, 8, 9, 9}
 	};
 
 	int game_board_level_3[4][6] = {
@@ -464,8 +469,13 @@ int memory_game()
 	}
 
 
-
-
+	// Création des cartes
+	Card animal_cards[12];
+	Card pastry_cards[12];
+	Card painting_cards[12];
+	create_cards(animal_cards, textures_animal);
+	create_cards(pastry_cards, textures_pastry);
+	create_cards(painting_cards, textures_painting);
 
 
 /*
@@ -499,10 +509,13 @@ int memory_game()
 
     // Boucle infinie du programme
     SDL_bool program_launched = SDL_TRUE;
-
     while(program_launched) {
-        SDL_Event event;
 
+		// Etat du jeu
+		int game_started = 0;
+
+		// Boucle de rendu SDL
+        SDL_Event event;
         while(SDL_PollEvent(&event)) {
             switch(event.type) {
                 // Clic icone de fermeture de la fenêtre
@@ -537,7 +550,7 @@ int memory_game()
 
 
 		// Instruction si le thème et le niveau n'ont pas encore été choisis
-		if (!selected_theme && !selected_level) {
+		if (!selected_theme && !selected_level && !game_started) {
 			SDL_texture_renderer(renderer, window, texture_name, name_x, name_y);
 			SDL_texture_renderer(renderer, window, texture_animal_theme, animal_theme_x, animal_theme_y);
 			SDL_texture_renderer(renderer, window, texture_pastry_theme, pastry_theme_x, pastry_theme_y);
@@ -550,24 +563,35 @@ int memory_game()
 		}
 
 		// Instruction une fois que le thème et le niveau ont été choisis
-		if (selected_theme && selected_level) {
+		if (selected_theme && selected_level && !game_started) {
 			// Effacement des boutons de nom, thème et niveau du rendu
+			SDL_Delay(500);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
 			SDL_clear_renderer(renderer);
-		/*
+		
 			// Mélange des cartes en fonction du niveau
 			if (selected_level == 1) {
-				game_board_size = 4;
-				shuffle(4, game_board_size, game_board_level_1);
+				game_board_size = 2;
+				shuffle(game_board_size, 6, game_board_level_1);
 			} else if (selected_level == 2) {
-				game_board_size = 5;
-				shuffle(4, game_board_size, game_board_level_2);
+				game_board_size = 3;
+				shuffle(game_board_size, 6, game_board_level_2);
 			} else if (selected_level == 3) {
-				game_board_size = 6;
-				shuffle(4, game_board_size, game_board_level_3);
+				game_board_size = 4;
+				shuffle(game_board_size, 6, game_board_level_3);
 			}
+
+			// Affichage du plateau de jeu
+			for (int i = 0; i < 12; i++) {
+				printf("%d\n", i);
+				//SDL_texture_renderer(renderer, window, textures_animal[i], (i * 206) % WINDOW_WIDTH, 0);
+			}
+			SDL_RenderPresent(renderer);
+			game_started = 1;
+
+			printf("sorti");
 		}
 /*
 							// Vérification clic sur la carte
@@ -1154,7 +1178,7 @@ int memory_game()
 	
 	return EXIT_SUCCESS;*/
 
-		}}}
+		}}
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -1171,33 +1195,6 @@ int SDL_exit_with_error(const char *message) {
 void SDL_destroy_window_renderer(SDL_Renderer *renderer, SDL_Window *window) {
 	SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-}
-
-// ----------------------------------------------------------------------------------------------------------------
-
-// Fonction permettant de vérifier la zone de clic
-int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max) {
-	if ((x >= x_min) && (x <= x_max) && (y >= y_min) && (y <= y_max)) {
-		return 1;
-	}
-	return 0;
-}
-
-// ----------------------------------------------------------------------------------------------------------------
-
-// Fonction permettant de mélanger les cartes (algorithme de Fisher Yates)
-void shuffle(int rows, int columns, int game_board[rows][columns]) {
-    int total_cards = rows * columns;
-    for (int i = total_cards - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
-        int row_i = i / columns;
-        int column_i = i % columns;
-        int row_j = j / columns;
-        int column_j = j % columns;
-        int temp = game_board[row_i][column_i];
-        game_board[row_i][column_i] = game_board[row_j][column_j];
-        game_board[row_j][column_j] = temp;
-    }
 }
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -1257,11 +1254,51 @@ void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Textur
     }
 }
 
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de créer les cartes
+void create_cards(Card *cards, SDL_Texture **textures) {
+    for (int i = 0; i < 12; i++) {
+        cards[i].card_image = textures[i];
+        cards[i].card_number = i + 1;
+        cards[i].card_revealed = 0;
+        cards[i].card_x = 0;
+        cards[i].card_y = 0;
+    }
+}
 
 
+// Fonction permettant de créer les cartes
+void position_cards(Card *cards, SDL_Texture **textures) {
+    // à completer
+}
 
+// ----------------------------------------------------------------------------------------------------------------
 
+// Fonction permettant de vérifier la zone de clic
+int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max) {
+	if ((x >= x_min) && (x <= x_max) && (y >= y_min) && (y <= y_max)) {
+		return 1;
+	}
+	return 0;
+}
 
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de mélanger les cartes (algorithme de Fisher Yates)
+void shuffle(int rows, int columns, int game_board[rows][columns]) {
+    int total_cards = rows * columns;
+    for (int i = total_cards - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int row_i = i / columns;
+        int column_i = i % columns;
+        int row_j = j / columns;
+        int column_j = j % columns;
+        int temp = game_board[row_i][column_i];
+        game_board[row_i][column_i] = game_board[row_j][column_j];
+        game_board[row_j][column_j] = temp;
+    }
+}
 
 
 
@@ -1343,3 +1380,4 @@ bool hasWon(int rows, int columns, bool judge[rows][columns])
 }
 
 */
+
