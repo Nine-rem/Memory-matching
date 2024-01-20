@@ -41,6 +41,7 @@ void SDL_clear_back_texture(SDL_Texture *texture_back);
 void SDL_clear_renderer(SDL_Renderer *renderer);
 void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, int x, int y);
 void create_cards(Card *cards, SDL_Texture **textures);
+void position_cards(Card *cards, int rows, int game_board[rows][6]);
 int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max);
 void shuffle(int rows, int columns, int game_board[rows][columns]);
 
@@ -586,10 +587,12 @@ int memory_game()
 			// Affichage du plateau de jeu
 			for (int i = 0; i < 12; i++) {
 				printf("%d\n", i);
-				//SDL_texture_renderer(renderer, window, textures_animal[i], (i * 206) % WINDOW_WIDTH, 0);
+				position_cards(animal_cards, game_board_size, game_board_level_1);
+				SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x, animal_cards[i].card_y);
 			}
 			SDL_RenderPresent(renderer);
 			game_started = 1;
+			SDL_Delay(6000);
 
 			printf("sorti");
 		}
@@ -1267,10 +1270,21 @@ void create_cards(Card *cards, SDL_Texture **textures) {
     }
 }
 
+// ----------------------------------------------------------------------------------------------------------------
 
 // Fonction permettant de créer les cartes
-void position_cards(Card *cards, SDL_Texture **textures) {
-    // à completer
+void position_cards(Card *cards, int rows, int game_board[rows][6]) {
+    for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < 6; j++) {
+			for (int k = 0; k < 12; k++) {
+				if (game_board[i][j] == cards[k].card_number) {
+					printf("carte %d", game_board[i][j]);
+					cards[k].card_x = (j * CARD_WIDTH_HEIGHT);
+					cards[k].card_y = i * CARD_WIDTH_HEIGHT;
+				}
+			}
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------------------------------------------
