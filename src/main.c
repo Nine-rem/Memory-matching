@@ -43,6 +43,7 @@ void SDL_clear_level_texture(SDL_Texture *texture_level_1, SDL_Texture *texture_
 void SDL_clear_back_texture(SDL_Texture *texture_back);
 void SDL_clear_renderer(SDL_Renderer *renderer);
 void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, int x, int y);
+void SDL_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size);
 void create_cards(Card *cards, SDL_Texture **textures);
 void position_cards(Card *cards, int rows, int game_board[rows][6], int selected_level);
 int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max);
@@ -596,13 +597,7 @@ int memory_game()
 						position_cards(animal_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						if (animal_cards[i].card_revealed == 1) {
-							SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x_1, animal_cards[i].card_y_1);
-							SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x_2, animal_cards[i].card_y_2);
-						} else {
-							SDL_texture_renderer(renderer, window, texture_back, animal_cards[i].card_x_1, animal_cards[i].card_y_1);
-							SDL_texture_renderer(renderer, window, texture_back, animal_cards[i].card_x_2, animal_cards[i].card_y_2);
-						}
+						SDL_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
 					}
 				} else if (selected_theme == 2) {
 					if (selected_level == 1) {
@@ -613,13 +608,7 @@ int memory_game()
 						position_cards(pastry_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						if (pastry_cards[i].card_revealed == 1) {
-							SDL_texture_renderer(renderer, window, textures_pastry[i], pastry_cards[i].card_x_1, pastry_cards[i].card_y_1);
-							SDL_texture_renderer(renderer, window, textures_pastry[i], pastry_cards[i].card_x_2, pastry_cards[i].card_y_2);
-						} else {
-							SDL_texture_renderer(renderer, window, texture_back, pastry_cards[i].card_x_1, pastry_cards[i].card_y_1);
-							SDL_texture_renderer(renderer, window, texture_back, pastry_cards[i].card_x_2, pastry_cards[i].card_y_2);
-						}
+						SDL_cards_display(renderer, window, textures_pastry, texture_back, pastry_cards, game_board_size);
 					}
 				} else if (selected_theme == 3) {
 					if (selected_level == 1) {
@@ -630,16 +619,9 @@ int memory_game()
 						position_cards(painting_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						if (painting_cards[i].card_revealed == 1) {
-							SDL_texture_renderer(renderer, window, textures_painting[i], painting_cards[i].card_x_1, painting_cards[i].card_y_1);
-							SDL_texture_renderer(renderer, window, textures_painting[i], painting_cards[i].card_x_2, painting_cards[i].card_y_2);
-						} else {
-							SDL_texture_renderer(renderer, window, texture_back, painting_cards[i].card_x_1, painting_cards[i].card_y_1);
-							SDL_texture_renderer(renderer, window, texture_back, painting_cards[i].card_x_2, painting_cards[i].card_y_2);
-						}
+						SDL_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
 					}
 				}
-
 				SDL_RenderPresent(renderer);
 				game_started = 1;
 			}
@@ -1308,6 +1290,21 @@ void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Textur
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("affichage texture");
     }
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant d'afficher les cartes
+void SDL_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size) {
+	for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
+		if (cards[i].card_revealed == 1) {
+			SDL_texture_renderer(renderer, window, textures_group[i], cards[i].card_x_1, cards[i].card_y_1);
+			SDL_texture_renderer(renderer, window, textures_group[i], cards[i].card_x_2, cards[i].card_y_2);
+		} else {
+			SDL_texture_renderer(renderer, window, texture, cards[i].card_x_1, cards[i].card_y_1);
+			SDL_texture_renderer(renderer, window, texture, cards[i].card_x_2, cards[i].card_y_2);
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------------------------------------------
