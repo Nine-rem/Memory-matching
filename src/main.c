@@ -596,8 +596,13 @@ int memory_game()
 						position_cards(animal_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x_1, animal_cards[i].card_y_1);
-						SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x_2, animal_cards[i].card_y_2);
+						if (animal_cards[i].card_revealed == 1) {
+							SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x_1, animal_cards[i].card_y_1);
+							SDL_texture_renderer(renderer, window, textures_animal[i], animal_cards[i].card_x_2, animal_cards[i].card_y_2);
+						} else {
+							SDL_texture_renderer(renderer, window, texture_back, animal_cards[i].card_x_1, animal_cards[i].card_y_1);
+							SDL_texture_renderer(renderer, window, texture_back, animal_cards[i].card_x_2, animal_cards[i].card_y_2);
+						}
 					}
 				} else if (selected_theme == 2) {
 					if (selected_level == 1) {
@@ -608,8 +613,13 @@ int memory_game()
 						position_cards(pastry_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						SDL_texture_renderer(renderer, window, textures_pastry[i], pastry_cards[i].card_x_1, pastry_cards[i].card_y_1);
-						SDL_texture_renderer(renderer, window, textures_pastry[i], pastry_cards[i].card_x_2, pastry_cards[i].card_y_2);
+						if (pastry_cards[i].card_revealed == 1) {
+							SDL_texture_renderer(renderer, window, textures_pastry[i], pastry_cards[i].card_x_1, pastry_cards[i].card_y_1);
+							SDL_texture_renderer(renderer, window, textures_pastry[i], pastry_cards[i].card_x_2, pastry_cards[i].card_y_2);
+						} else {
+							SDL_texture_renderer(renderer, window, texture_back, pastry_cards[i].card_x_1, pastry_cards[i].card_y_1);
+							SDL_texture_renderer(renderer, window, texture_back, pastry_cards[i].card_x_2, pastry_cards[i].card_y_2);
+						}
 					}
 				} else if (selected_theme == 3) {
 					if (selected_level == 1) {
@@ -620,8 +630,13 @@ int memory_game()
 						position_cards(painting_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						SDL_texture_renderer(renderer, window, textures_painting[i], painting_cards[i].card_x_1, painting_cards[i].card_y_1);
-						SDL_texture_renderer(renderer, window, textures_painting[i], painting_cards[i].card_x_2, painting_cards[i].card_y_2);
+						if (painting_cards[i].card_revealed == 1) {
+							SDL_texture_renderer(renderer, window, textures_painting[i], painting_cards[i].card_x_1, painting_cards[i].card_y_1);
+							SDL_texture_renderer(renderer, window, textures_painting[i], painting_cards[i].card_x_2, painting_cards[i].card_y_2);
+						} else {
+							SDL_texture_renderer(renderer, window, texture_back, painting_cards[i].card_x_1, painting_cards[i].card_y_1);
+							SDL_texture_renderer(renderer, window, texture_back, painting_cards[i].card_x_2, painting_cards[i].card_y_2);
+						}
 					}
 				}
 
