@@ -37,6 +37,7 @@ int memory_game();
 int SDL_exit_with_error(const char *message);
 void SDL_destroy_window_renderer(SDL_Renderer *renderer, SDL_Window *window);
 void SDL_clear_name_texture(SDL_Texture *texture_name);
+void SDL_clear_bravo_texture(SDL_Texture *texture_bravo);
 void SDL_clear_theme_texture(SDL_Texture *texture_animal_theme, SDL_Texture *texture_pastry_theme, SDL_Texture *texture_painting_theme);
 void SDL_clear_level_texture(SDL_Texture *texture_level_1, SDL_Texture *texture_level_2, SDL_Texture *texture_level_3);
 void SDL_clear_back_texture(SDL_Texture *texture_back);
@@ -51,7 +52,8 @@ void second_card_selection(int x, int y, Card *cards, SDL_Texture **textures_gro
 void cards_verification(Card *cards, int *second_selection, int *first_selection, int game_board_size, SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture);
 int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max);
 void shuffle(int rows, int columns, int game_board[rows][columns]);
-int has_won(int rows, int columns, int check_card[rows][columns]);
+int has_won(int game_board_size, Card *cards);
+int end_game(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_bravo, int bravo_x, int bravo_y, SDL_Texture **textures_animal, SDL_Texture **textures_pastry, SDL_Texture **textures_painting);
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -115,11 +117,32 @@ int memory_game()
     int name_y = (WINDOW_HEIGHT / 2) - 200;
 
 
+	// Chargement bravo
+    SDL_Surface *image_bravo = NULL;
+    image_bravo = SDL_LoadBMP("src/images/bravo.bmp");
+    if (image_bravo == NULL) {
+		SDL_clear_name_texture(texture_name);
+        SDL_destroy_window_renderer(renderer, window);
+        SDL_exit_with_error("chargement image bravo");
+    }
+	SDL_Texture *texture_bravo = NULL;
+    texture_bravo = SDL_CreateTextureFromSurface(renderer, image_bravo);
+    SDL_FreeSurface(image_bravo);
+    if (texture_bravo == NULL) {
+		SDL_clear_name_texture(texture_name);
+        SDL_destroy_window_renderer(renderer, window);
+        SDL_exit_with_error("creation texture bravo");
+    }
+	int bravo_x = (WINDOW_WIDTH / 2) - 300;
+    int bravo_y = (WINDOW_HEIGHT / 2) - 300;
+
+
 	// Chargement image dos de la carte
 	SDL_Surface *image_back = NULL;
 	image_back = SDL_LoadBMP("src/images/back.bmp");
 	if (image_back == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("chargement image couverture carte");
     }
@@ -128,11 +151,10 @@ int memory_game()
 	SDL_FreeSurface(image_back);
 	if (texture_back == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("creation texture couverture carte");
     }
-	int back_x = 0;
-	int back_y = 0;
 
 
 	// Choix du theme et niveau
@@ -145,6 +167,7 @@ int memory_game()
 	image_animal_theme = SDL_LoadBMP("src/images/animals/2.bmp");
 	if (image_animal_theme == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("chargement image theme animaux");
@@ -154,6 +177,7 @@ int memory_game()
 	SDL_FreeSurface(image_animal_theme);
 	if (texture_animal_theme == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("creation texture theme animaux");
@@ -167,6 +191,7 @@ int memory_game()
 	image_pastry_theme = SDL_LoadBMP("src/images/pastries/1.bmp");
 	if (image_pastry_theme == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_DestroyTexture(texture_animal_theme);
         SDL_destroy_window_renderer(renderer, window);
@@ -177,6 +202,7 @@ int memory_game()
 	SDL_FreeSurface(image_pastry_theme);
 	if (texture_pastry_theme == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_DestroyTexture(texture_animal_theme);
         SDL_destroy_window_renderer(renderer, window);
@@ -191,6 +217,7 @@ int memory_game()
 	image_painting_theme = SDL_LoadBMP("src/images/paintings/3.bmp");
 	if (image_painting_theme == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_DestroyTexture(texture_animal_theme);
 		SDL_DestroyTexture(texture_pastry_theme);
@@ -202,6 +229,7 @@ int memory_game()
 	SDL_FreeSurface(image_painting_theme);
 	if (texture_painting_theme == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_DestroyTexture(texture_animal_theme);
 		SDL_DestroyTexture(texture_pastry_theme);
@@ -217,6 +245,7 @@ int memory_game()
     image_level_1 = SDL_LoadBMP("src/images/level1.bmp");
     if (image_level_1 == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
         SDL_destroy_window_renderer(renderer, window);
@@ -227,6 +256,7 @@ int memory_game()
     SDL_FreeSurface(image_level_1);
     if (texture_level_1 == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
         SDL_destroy_window_renderer(renderer, window);
@@ -241,6 +271,7 @@ int memory_game()
     image_level_2 = SDL_LoadBMP("src/images/level2.bmp");
     if (image_level_2 == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 		SDL_DestroyTexture(texture_level_1);
@@ -252,6 +283,7 @@ int memory_game()
     SDL_FreeSurface(image_level_2);
     if (texture_level_2 == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 		SDL_DestroyTexture(texture_level_1);
@@ -267,6 +299,7 @@ int memory_game()
     image_level_3 = SDL_LoadBMP("src/images/level3.bmp");
     if (image_level_3 == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 		SDL_DestroyTexture(texture_level_1);
@@ -279,6 +312,7 @@ int memory_game()
     SDL_FreeSurface(image_level_3);
     if (texture_level_3 == NULL) {
 		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
 		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 		SDL_DestroyTexture(texture_level_1);
@@ -335,6 +369,7 @@ int memory_game()
 		image_animal = SDL_LoadBMP(path_animal[i]);
 		if (image_animal == NULL) {
 			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
@@ -349,6 +384,7 @@ int memory_game()
 		SDL_FreeSurface(image_animal);
 		if (textures_animal[i] == NULL) {
 			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
@@ -384,6 +420,7 @@ int memory_game()
 		image_pastry = SDL_LoadBMP(path_pastry[i]);
 		if (image_pastry == NULL) {
 			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
@@ -401,6 +438,7 @@ int memory_game()
 		SDL_FreeSurface(image_pastry);
 		if (textures_pastry[i] == NULL) {
 			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
@@ -439,6 +477,7 @@ int memory_game()
 		image_painting = SDL_LoadBMP(path_painting[i]);
 		if (image_painting == NULL) {
 			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
@@ -457,6 +496,7 @@ int memory_game()
 		SDL_FreeSurface(image_painting);
 		if (textures_pastry[i] == NULL) {
 			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
@@ -629,51 +669,29 @@ int memory_game()
 		if (game_started && first_selection && second_selection) {
 			if (selected_theme == 1) {
 				cards_verification(animal_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_animal, texture_back);
+				if (has_won(game_board_size, animal_cards)) {
+					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
+				}
 			} else if (selected_theme == 2) {
 				cards_verification(pastry_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_pastry, texture_back);
+				if (has_won(game_board_size, pastry_cards)) {
+					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
+				}
 			} else if (selected_theme == 3) {
 				cards_verification(painting_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_painting, texture_back);
+				if (has_won(game_board_size, painting_cards)) {
+					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
+				}
 			}
+
 			SDL_RenderPresent(renderer);
 			first_selection = 0;
 			second_selection = 0;
 		}
 	}
-}
-
-
-/*
-	SDL_DestroyTexture(background);
-	SDL_DestroyTexture(textMemory);
-	SDL_DestroyTexture(textWon);	
-	SDL_DestroyTexture(onePlayerButton);
-	SDL_DestroyTexture(twoPlayerButton);
-	SDL_DestroyTexture(exitButton);
-	SDL_DestroyTexture(animal_theme_button);
-	SDL_DestroyTexture(flowerButton);
-	SDL_DestroyTexture(catButton);
-	SDL_DestroyTexture(returnButton);
-	SDL_DestroyTexture(backgroundCardLettre);
-	SDL_DestroyTexture(backgroundCardFleur);
-	SDL_DestroyTexture(backgroundCardChat);
-	SDL_DestroyTexture(verticalBar);
-	SDL_DestroyTexture(textPlayerOne);
-	SDL_DestroyTexture(textPlayerTwo);
-	SDL_DestroyTexture(textScorePlayerOne);
-	SDL_DestroyTexture(textScorePlayerTwo);
-	SDL_DestroyTexture(textPlayerOneWon);
-	SDL_DestroyTexture(textPlayerTwoWon);
-	SDL_DestroyTexture(textDraw);
-	for(int i = 0; i < 8; ++i)
-		SDL_DestroyTexture(letters[i]);
-	for(int i = 0; i < 10; ++i)
-		SDL_DestroyTexture(flowers[i]);
-	for(int i = 0; i < 12; ++i)
-		SDL_DestroyTexture(cats[i]);
-	cleanUp(window, renderer);
 	
-	return EXIT_SUCCESS;
-	*/
+	return 1;
+}
 
 		
 
@@ -699,6 +717,13 @@ void SDL_destroy_window_renderer(SDL_Renderer *renderer, SDL_Window *window) {
 // Fonction permettant d'effacer la texture du nom
 void SDL_clear_name_texture(SDL_Texture *texture_name) {
 	SDL_DestroyTexture(texture_name);
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant d'effacer le message bravo
+void SDL_clear_bravo_texture(SDL_Texture *texture_bravo) {
+	SDL_DestroyTexture(texture_bravo);
 }
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -753,7 +778,7 @@ void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Textur
 
 // ----------------------------------------------------------------------------------------------------------------
 
-// Fonction permettant d'afficher les cartes
+// Fonction permettant d'afficher toutes les cartes
 void SDL_all_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size) {
 	for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
 		if (cards[i].card_revealed == 1) {
@@ -792,7 +817,7 @@ void create_cards(Card *cards, SDL_Texture **textures) {
 
 // ----------------------------------------------------------------------------------------------------------------
 
-// Fonction permettant de créer les cartes
+// Fonction permettant de positionner les cartes
 void position_cards(Card *cards, int rows, int game_board[rows][6], int selected_level) {
 	int margin;
 	if (selected_level == 1) {
@@ -849,14 +874,13 @@ void shuffle(int rows, int columns, int game_board[rows][columns]) {
 // ----------------------------------------------------------------------------------------------------------------
 
 // Fonction permettant de vérifier si le joueur a gagné 
-int has_won(int rows, int columns, int check_card[rows][columns]) {
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0;  j < columns; j++) {
-			if (!check_card[i][j]) {
-				return 0;
-			}
+int has_won(int game_board_size, Card *cards) {
+	for (int i = 0; i < 6 * game_board_size / 2; i++) {
+		if(cards[i].card_revealed == 0) {
+			return 0;
 		}
 	}
+	return 1;
 }
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -916,4 +940,23 @@ void cards_verification(Card *cards, int *second_selection, int *first_selection
 	for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
 		SDL_all_cards_display(renderer, window, textures_group, texture, cards, game_board_size);
 	}
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de quitter le jeu en cas de victoire
+int end_game(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_bravo, int bravo_x, int bravo_y, SDL_Texture **textures_animal, SDL_Texture **textures_pastry, SDL_Texture **textures_painting) {
+	for (int x = 0; x < 12; x++) {
+		SDL_DestroyTexture(textures_animal[x]);
+		SDL_DestroyTexture(textures_pastry[x]);
+		SDL_DestroyTexture(textures_painting[x]);
+	}
+
+	SDL_clear_renderer(renderer);
+	SDL_texture_renderer(renderer, window, texture_bravo, bravo_x, bravo_y);
+	SDL_RenderPresent(renderer);
+	SDL_Delay(3000);
+	SDL_clear_renderer(renderer);
+	SDL_DestroyTexture(texture_bravo);
+	exit(EXIT_SUCCESS);
 }
