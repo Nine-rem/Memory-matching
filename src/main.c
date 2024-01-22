@@ -29,7 +29,6 @@ typedef struct {
 } Card;
 
 
-
 /* ----------------------------------------------------------------------------------------------------------------
 	Déclaration des fonctions
 ---------------------------------------------------------------------------------------------------------------- */
@@ -43,23 +42,20 @@ void SDL_clear_level_texture(SDL_Texture *texture_level_1, SDL_Texture *texture_
 void SDL_clear_back_texture(SDL_Texture *texture_back);
 void SDL_clear_renderer(SDL_Renderer *renderer);
 void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, int x, int y);
-void SDL_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size);
+void SDL_all_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size);
+void SDL_card_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, Card card, int x, int y);
 void create_cards(Card *cards, SDL_Texture **textures);
 void position_cards(Card *cards, int rows, int game_board[rows][6], int selected_level);
+void first_card_selection(int x, int y, Card *cards, SDL_Texture **textures_group, int *first_selection, int *first_selection_x, int *first_selection_y, int game_board_size, SDL_Renderer *renderer, SDL_Window *window);
+void second_card_selection(int x, int y, Card *cards, SDL_Texture **textures_group, int *second_selection, int first_selection_x, int first_selection_y, int game_board_size, SDL_Renderer *renderer, SDL_Window *window);
 int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max);
 void shuffle(int rows, int columns, int game_board[rows][columns]);
 int has_won(int rows, int columns, int check_card[rows][columns]);
 
-// -------------------------À trier--------------------------------
-/*
-bool isTwoSelect(int rows, int columns, bool tab[rows][columns], bool judge[rows][columns], int game_board[rows][columns]);
 
-*/
-
-
-// /* ----------------------------------------------------------------------------------------------------------------
-// 	Fonction main
-// ---------------------------------------------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------------------------------------------
+	Fonction main
+---------------------------------------------------------------------------------------------------------------- */
 
 // Lancement de la fonction principale permettant de jouer
 int main(int argc, char **argv) {
@@ -68,7 +64,6 @@ int main(int argc, char **argv) {
 	}
 	exit(EXIT_SUCCESS);
 }
-
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -81,10 +76,12 @@ int memory_game()
 	// Initialisation générateur nombre aléatoire
 	srand(time(NULL));
 
+
 	// Initialisation SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_exit_with_error("initialisation SDL");
     }
+
 
 	// Création de la fenêtre et du rendu
     SDL_Window *window = NULL;
@@ -484,38 +481,18 @@ int memory_game()
 	create_cards(painting_cards, textures_painting);
 
 
-/*
+	// Sélection des cartes
+	int first_selection = 0;
+	int first_selection_x = 0;
+	int first_selection_y = 0;
+	int second_selection = 0;
 
 
-	// - A trier ------------------------------------------------------------------------------------------------v--------------
-
-
-	char scoreStringPlayerOne[6];
-
-	printf(scoreStringPlayerOne, "%d", scorePlayerOne);
-
-	int startedSelect = 1;
-	int won = 0;
-
-	bool lettersSelect[4][4] = {false};
-	bool judgeLetters[4][4] = {false};
-
-	bool flowersSelect[4][5] = {false};
-	bool judgeFlowers[4][5] = {false};
-
-	bool catsSelect[4][6] = {false};
-	bool judgeCats[4][6] = {false};
-
-	bool forTwo;
-	int countForTwo = 0;
-
-
-*/
-//------------------------------------------------------------------------------------------------------------------------------
 	// Etat du jeu
 	int game_started = 0;
 
-	// Instruction si le thème et le niveau n'ont pas encore été choisis
+
+	// Affichage choix du niveau et du thème
 	if (!selected_theme && !selected_level && !game_started) {
 		SDL_texture_renderer(renderer, window, texture_name, name_x, name_y);
 		SDL_texture_renderer(renderer, window, texture_animal_theme, animal_theme_x, animal_theme_y);
@@ -560,10 +537,32 @@ int memory_game()
                         } else if (in_zone(event.button.x, event.button.y, level_3_x, level_3_x + CARD_WIDTH_HEIGHT, level_3_y, level_3_y + LABEL_HEIGHT)) {
                             selected_level = 3;
                         }
+
+						// Sélection de la première carte
+						if ((game_started) && (!first_selection) && (!second_selection)) {
+							if (selected_theme == 1) {
+								first_card_selection(event.button.x, event.button.y, animal_cards, textures_animal, &first_selection, &first_selection_x, &first_selection_y, game_board_size, renderer, window);
+							} else if (selected_theme == 2) {
+								first_card_selection(event.button.x, event.button.y, pastry_cards, textures_pastry, &first_selection, &first_selection_x, &first_selection_y, game_board_size, renderer, window);
+							} else if (selected_theme == 3) {
+								first_card_selection(event.button.x, event.button.y, painting_cards, textures_painting, &first_selection, &first_selection_x, &first_selection_y, game_board_size, renderer, window);
+							}
+
+						// Selection de la deuxième carte
+						} else if ((game_started) && (first_selection) && (!second_selection)) {
+							if (selected_theme == 1) {
+								second_card_selection(event.button.x, event.button.y, animal_cards, textures_animal, &second_selection, first_selection_x, first_selection_y, game_board_size, renderer, window);
+							} else if (selected_theme == 2) {
+								second_card_selection(event.button.x, event.button.y, pastry_cards, textures_pastry, &second_selection, first_selection_x, first_selection_y, game_board_size, renderer, window);
+							} else if (selected_theme == 3) {
+								second_card_selection(event.button.x, event.button.y, painting_cards, textures_painting, &second_selection, first_selection_x, first_selection_y, game_board_size, renderer, window);
+							}
+						}
 					}
-					break;
+					break;						
+				}
 			}
-		}
+		
 
 		// Instruction une fois que le thème et le niveau ont été choisis
 		if (!game_started) {
@@ -597,7 +596,7 @@ int memory_game()
 						position_cards(animal_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						SDL_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
+						SDL_all_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
 					}
 				} else if (selected_theme == 2) {
 					if (selected_level == 1) {
@@ -608,7 +607,7 @@ int memory_game()
 						position_cards(pastry_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						SDL_cards_display(renderer, window, textures_pastry, texture_back, pastry_cards, game_board_size);
+						SDL_all_cards_display(renderer, window, textures_pastry, texture_back, pastry_cards, game_board_size);
 					}
 				} else if (selected_theme == 3) {
 					if (selected_level == 1) {
@@ -619,7 +618,7 @@ int memory_game()
 						position_cards(painting_cards, game_board_size, game_board_level_3, selected_level);
 					}
 					for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-						SDL_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
+						SDL_all_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
 					}
 				}
 				SDL_RenderPresent(renderer);
@@ -627,136 +626,20 @@ int memory_game()
 			}
 		}
 
-	
-/**
-
-
-
-							// Vérification clic sur la carte
-							for (int i = 0; i < 4; i++) {
-								for (int j = 0; j < game_board_size; j++) {
-									if (in_zone(event.button.x, event.button.y,
-												  xStartCard + 350 * j, xStartCard + 350 * j + CARD_WIDTH_HEIGHT,
-												  yStartCard - 100 + 200 * i, yStartCard - 100 + 200 * i + CARD_WIDTH_HEIGHT)) //1825
-									{
-										if(!judgeLetters[i][j])
-										{
-											forTwo = isTwoSelect(4, 4, lettersSelect, judgeLetters, game_boardLetters);
-											if(!forTwo)
-												countForTwo++;
-											if(twoPlayerSelect && countForTwo == 2)
-											{
-												if(isPlayerOne)
-												{
-													isPlayerOne = 0;
-													isPlayerTwo = 1;
-													countForTwo = 0;
-												}
-
-												else if(isPlayerTwo)
-												{
-													isPlayerTwo = 0;
-													isPlayerOne = 1;
-													countForTwo = 0;
-												}
-											}
-											if(twoPlayerSelect && forTwo)
-											{
-												if(isPlayerOne)
-												{
-													scorePlayerOne+= 100;
-													isPlayerOne = 0;
-													isPlayerTwo = 1;
-
-													SDL_DestroyTexture(textScorePlayerOne);
-													sprintf(scoreStringPlayerOne, "%d", scorePlayerOne);
-
-													textScorePlayerOne = renderText(scoreStringPlayerOne, fontPath, white, 60, renderer);
-													if(!textScorePlayerOne)
-													{
-														SDL_DestroyTexture(background);
-														SDL_DestroyTexture(textMemory);
-														SDL_DestroyTexture(textWon);			
-														SDL_DestroyTexture(onePlayerButton);
-														SDL_DestroyTexture(twoPlayerButton);
-														SDL_DestroyTexture(exitButton);
-														SDL_DestroyTexture(animal_theme_button);
-														SDL_DestroyTexture(flowerButton);
-														SDL_DestroyTexture(catButton);
-														SDL_DestroyTexture(returnButton);
-														SDL_DestroyTexture(backgroundCardLettre);
-														SDL_DestroyTexture(backgroundCardFleur);
-														SDL_DestroyTexture(backgroundCardChat);
-														SDL_DestroyTexture(verticalBar);
-														SDL_DestroyTexture(textPlayerOne);
-														SDL_DestroyTexture(textPlayerTwo);
-														SDL_DestroyTexture(textScorePlayerTwo);
-														SDL_DestroyTexture(textPlayerOneWon);
-														SDL_DestroyTexture(textPlayerTwoWon);
-														SDL_DestroyTexture(textDraw);
-														for(int i = 0; i < 8; ++i)
-															SDL_DestroyTexture(letters[i]);
-														for(int i = 0; i < 10; ++i)
-															SDL_DestroyTexture(flowers[i]);
-														for(int i = 0; i < 12; ++i)
-															SDL_DestroyTexture(cats[i]);
-														cleanUp(window, renderer);
-														return EXIT_FAILURE;		
-													}
-												}
-												else if(isPlayerTwo)
-												{
-													scorePlayerTwo+= 100;
-													isPlayerTwo = 0;
-													isPlayerOne = 1;
-
-													SDL_DestroyTexture(textScorePlayerTwo);
-													sprintf(scoreStringPlayerTwo, "%d", scorePlayerTwo);
-
-													textScorePlayerTwo = renderText(scoreStringPlayerTwo, fontPath, white, 60, renderer);
-													if(!textScorePlayerTwo)
-													{
-														SDL_DestroyTexture(background);
-														SDL_DestroyTexture(textMemory);
-														SDL_DestroyTexture(textWon);			
-														SDL_DestroyTexture(onePlayerButton);
-														SDL_DestroyTexture(twoPlayerButton);
-														SDL_DestroyTexture(exitButton);
-														SDL_DestroyTexture(animal_theme_button);
-														SDL_DestroyTexture(flowerButton);
-														SDL_DestroyTexture(catButton);
-														SDL_DestroyTexture(returnButton);
-														SDL_DestroyTexture(backgroundCardLettre);
-														SDL_DestroyTexture(backgroundCardFleur);
-														SDL_DestroyTexture(backgroundCardChat);
-														SDL_DestroyTexture(verticalBar);
-														SDL_DestroyTexture(textPlayerOne);
-														SDL_DestroyTexture(textPlayerTwo);
-														SDL_DestroyTexture(textScorePlayerOne);
-														SDL_DestroyTexture(textPlayerOneWon);
-														SDL_DestroyTexture(textPlayerTwoWon);
-														SDL_DestroyTexture(textDraw);
-														for(int i = 0; i < 8; ++i)
-															SDL_DestroyTexture(letters[i]);
-														for(int i = 0; i < 10; ++i)
-															SDL_DestroyTexture(flowers[i]);
-														for(int i = 0; i < 12; ++i)
-															SDL_DestroyTexture(cats[i]);
-														cleanUp(window, renderer);
-														return EXIT_FAILURE;																
-													}
-												}
-											}
-
-											lettersSelect[i][j] = !lettersSelect[i][j];
-										}
-									}
-						}
-
-						}
-
-
-                    }
+		// // Instruction si deux cartes ont été sélectionnées
+		// if (game_started && first_selection && second_selection) {
+		// 	for (int i = 0; i < (6 * game_board_size); i++) {
+		// 		if ((animal_cards[i].card_number == first_selection) && (first_selection == second_selection)) {
+		// 			animal_cards[i].card_revealed = 1;
+		// 		}
+		// 	}
+		// 	for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
+		// 		SDL_all_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
+		// 	}
+		// 	SDL_RenderPresent(renderer);
+		// 	first_selection = 0;
+		// 	second_selection = 0;
+		// }
 
 
 
@@ -764,426 +647,12 @@ int memory_game()
 
 
 
-						
 
 
-
-						else if(flowerSelect)
-						{
-							for(int i = 0; i < 4; ++i)
-								for(int j = 0; j < 5; ++j)
-									if(in_zone(event.button.x, event.button.y,
-												  xStartCard + 300 * j, xStartCard + 300 * j + CARD_WIDTH_HEIGHT,
-												  yStartCard + 200 * i, yStartCard + 200 * i + CARD_WIDTH_HEIGHT)) //1845
-									{
-										if(!judgeFlowers[i][j])
-										{
-											forTwo = isTwoSelect(4, 5, flowersSelect, judgeFlowers, game_boardFlowers);
-											if(!forTwo)
-												countForTwo++;
-											if(twoPlayerSelect && countForTwo == 2)
-											{
-												if(isPlayerOne)
-												{
-													isPlayerOne = 0;
-													isPlayerTwo = 1;
-													countForTwo = 0;
-												}
-
-												else if(isPlayerTwo)
-												{
-													isPlayerTwo = 0;
-													isPlayerOne = 1;
-													countForTwo = 0;
-												}
-											}											
-											if(twoPlayerSelect && forTwo)
-											{
-												if(isPlayerOne)
-												{
-													scorePlayerOne+= 100;
-													isPlayerOne = 0;
-													isPlayerTwo = 1;
-
-													SDL_DestroyTexture(textScorePlayerOne);
-													sprintf(scoreStringPlayerOne, "%d", scorePlayerOne);
-
-													textScorePlayerOne = renderText(scoreStringPlayerOne, fontPath, white, 60, renderer);
-													if(!textScorePlayerOne)
-													{
-														SDL_DestroyTexture(background);
-														SDL_DestroyTexture(textMemory);
-														SDL_DestroyTexture(textWon);			
-														SDL_DestroyTexture(onePlayerButton);
-														SDL_DestroyTexture(twoPlayerButton);
-														SDL_DestroyTexture(exitButton);
-														SDL_DestroyTexture(animal_theme_button);
-														SDL_DestroyTexture(flowerButton);
-														SDL_DestroyTexture(catButton);
-														SDL_DestroyTexture(returnButton);
-														SDL_DestroyTexture(backgroundCardLettre);
-														SDL_DestroyTexture(backgroundCardFleur);
-														SDL_DestroyTexture(backgroundCardChat);
-														SDL_DestroyTexture(verticalBar);
-														SDL_DestroyTexture(textPlayerOne);
-														SDL_DestroyTexture(textPlayerTwo);
-														SDL_DestroyTexture(textScorePlayerTwo);
-														SDL_DestroyTexture(textPlayerOneWon);
-														SDL_DestroyTexture(textPlayerTwoWon);
-														SDL_DestroyTexture(textDraw);
-														for(int i = 0; i < 8; ++i)
-															SDL_DestroyTexture(letters[i]);
-														for(int i = 0; i < 10; ++i)
-															SDL_DestroyTexture(flowers[i]);
-														for(int i = 0; i < 12; ++i)
-															SDL_DestroyTexture(cats[i]);
-														cleanUp(window, renderer);
-														return EXIT_FAILURE;		
-													}
-												}
-												else if(isPlayerTwo)
-												{
-													scorePlayerTwo+= 100;
-													isPlayerTwo = 0;
-													isPlayerOne = 1;
-
-													SDL_DestroyTexture(textScorePlayerTwo);
-													sprintf(scoreStringPlayerTwo, "%d", scorePlayerTwo);
-
-													textScorePlayerTwo = renderText(scoreStringPlayerTwo, fontPath, white, 60, renderer);
-													if(!textScorePlayerTwo)
-													{
-														SDL_DestroyTexture(background);
-														SDL_DestroyTexture(textMemory);
-														SDL_DestroyTexture(textWon);			
-														SDL_DestroyTexture(onePlayerButton);
-														SDL_DestroyTexture(twoPlayerButton);
-														SDL_DestroyTexture(exitButton);
-														SDL_DestroyTexture(animal_theme_button);
-														SDL_DestroyTexture(flowerButton);
-														SDL_DestroyTexture(catButton);
-														SDL_DestroyTexture(returnButton);
-														SDL_DestroyTexture(backgroundCardLettre);
-														SDL_DestroyTexture(backgroundCardFleur);
-														SDL_DestroyTexture(backgroundCardChat);
-														SDL_DestroyTexture(verticalBar);
-														SDL_DestroyTexture(textPlayerOne);
-														SDL_DestroyTexture(textPlayerTwo);
-														SDL_DestroyTexture(textScorePlayerOne);
-														SDL_DestroyTexture(textPlayerOneWon);
-														SDL_DestroyTexture(textPlayerTwoWon);
-														SDL_DestroyTexture(textDraw);
-														for(int i = 0; i < 8; ++i)
-															SDL_DestroyTexture(letters[i]);
-														for(int i = 0; i < 10; ++i)
-															SDL_DestroyTexture(flowers[i]);
-														for(int i = 0; i < 12; ++i)
-															SDL_DestroyTexture(cats[i]);
-														cleanUp(window, renderer);
-														return EXIT_FAILURE;																
-													}
-												}
-											}
-
-											flowersSelect[i][j] = !flowersSelect[i][j];
-										}
-									}
-						}
-
-						else if(catSelect)
-						{
-							for(int i = 0; i < 4; ++i)
-								for(int j = 0; j < 6; ++j)
-									if(in_zone(event.button.x, event.button.y,
-												  xStartCard + 250 * j, xStartCard + 250 * j + CARD_WIDTH_HEIGHT,
-												  yStartCard + 200 * i, yStartCard + 200 * i + CARD_WIDTH_HEIGHT)) //1797
-									{
-										if(!judgeCats[i][j])
-										{
-											forTwo = isTwoSelect(4, 6, catsSelect, judgeCats, game_boardCats);
-											if(!forTwo)
-												countForTwo++;
-											if(twoPlayerSelect && countForTwo == 2)
-											{
-												if(isPlayerOne)
-												{
-													isPlayerOne = 0;
-													isPlayerTwo = 1;
-													countForTwo = 0;
-												}
-
-												else if(isPlayerTwo)
-												{
-													isPlayerTwo = 0;
-													isPlayerOne = 1;
-													countForTwo = 0;
-												}
-											}											
-											if(twoPlayerSelect && forTwo)
-											{
-												if(isPlayerOne)
-												{
-													scorePlayerOne+= 100;
-													isPlayerOne = 0;
-													isPlayerTwo = 1;
-
-													SDL_DestroyTexture(textScorePlayerOne);
-													sprintf(scoreStringPlayerOne, "%d", scorePlayerOne);
-
-													textScorePlayerOne = renderText(scoreStringPlayerOne, fontPath, white, 60, renderer);
-													if(!textScorePlayerOne)
-													{
-														SDL_DestroyTexture(background);
-														SDL_DestroyTexture(textMemory);
-														SDL_DestroyTexture(textWon);			
-														SDL_DestroyTexture(onePlayerButton);
-														SDL_DestroyTexture(twoPlayerButton);
-														SDL_DestroyTexture(exitButton);
-														SDL_DestroyTexture(animal_theme_button);
-														SDL_DestroyTexture(flowerButton);
-														SDL_DestroyTexture(catButton);
-														SDL_DestroyTexture(returnButton);
-														SDL_DestroyTexture(backgroundCardLettre);
-														SDL_DestroyTexture(backgroundCardFleur);
-														SDL_DestroyTexture(backgroundCardChat);
-														SDL_DestroyTexture(verticalBar);
-														SDL_DestroyTexture(textPlayerOne);
-														SDL_DestroyTexture(textPlayerTwo);
-														SDL_DestroyTexture(textScorePlayerTwo);
-														SDL_DestroyTexture(textPlayerOneWon);
-														SDL_DestroyTexture(textPlayerTwoWon);
-														SDL_DestroyTexture(textDraw);
-														for(int i = 0; i < 8; ++i)
-															SDL_DestroyTexture(letters[i]);
-														for(int i = 0; i < 10; ++i)
-															SDL_DestroyTexture(flowers[i]);
-														for(int i = 0; i < 12; ++i)
-															SDL_DestroyTexture(cats[i]);
-														cleanUp(window, renderer);
-														return EXIT_FAILURE;		
-													}
-												}
-												else if(isPlayerTwo)
-												{
-													scorePlayerTwo+= 100;
-													isPlayerTwo = 0;
-													isPlayerOne = 1;
-
-													SDL_DestroyTexture(textScorePlayerTwo);
-													sprintf(scoreStringPlayerTwo, "%d", scorePlayerTwo);
-
-													textScorePlayerTwo = renderText(scoreStringPlayerTwo, fontPath, white, 60, renderer);
-													if(!textScorePlayerTwo)
-													{
-														SDL_DestroyTexture(background);
-														SDL_DestroyTexture(textMemory);
-														SDL_DestroyTexture(textWon);			
-														SDL_DestroyTexture(onePlayerButton);
-														SDL_DestroyTexture(twoPlayerButton);
-														SDL_DestroyTexture(exitButton);
-														SDL_DestroyTexture(animal_theme_button);
-														SDL_DestroyTexture(flowerButton);
-														SDL_DestroyTexture(catButton);
-														SDL_DestroyTexture(returnButton);
-														SDL_DestroyTexture(backgroundCardLettre);
-														SDL_DestroyTexture(backgroundCardFleur);
-														SDL_DestroyTexture(backgroundCardChat);
-														SDL_DestroyTexture(verticalBar);
-														SDL_DestroyTexture(textPlayerOne);
-														SDL_DestroyTexture(textPlayerTwo);
-														SDL_DestroyTexture(textScorePlayerOne);
-														SDL_DestroyTexture(textPlayerOneWon);
-														SDL_DestroyTexture(textPlayerTwoWon);
-														SDL_DestroyTexture(textDraw);
-														for(int i = 0; i < 8; ++i)
-															SDL_DestroyTexture(letters[i]);
-														for(int i = 0; i < 10; ++i)
-															SDL_DestroyTexture(flowers[i]);
-														for(int i = 0; i < 12; ++i)
-															SDL_DestroyTexture(cats[i]);
-														cleanUp(window, renderer);
-														return EXIT_FAILURE;																
-													}
-												}
-											}
-
-											catsSelect[i][j] = !catsSelect[i][j];
-										}
-									}
-						}
+	}}
 
 
-					}
-				break;
-			}
-		}
-}
-
-
-	
-		
-		if(twoPlayerSelect && (letterSelect || flowerSelect || catSelect))
-		{
-		
-			renderTexture(textPlayerOne, renderer, xTextPlayerOne, yTextPlayerOne, NULL);
-			//renderTexture(textScorePlayerOne, renderer, xTextPlayerOne, yTextPlayerOne + 100, NULL);
-		}
-
-
-		if(has_won(4, 5, judgeFlowers))
-		{
-			flowerSelect = 0;
-			letterSelect = 0;
-			catSelect = 0;
-			returnSelect = 1;
-			won = 1;
-			if(twoPlayerSelect)
-			{
-				if(scorePlayerOne > scorePlayerTwo)
-					renderTexture(textPlayerOneWon, renderer, xTextWon, yTextWon, NULL);
-				else if(scorePlayerOne < scorePlayerTwo)
-					renderTexture(textPlayerTwoWon, renderer, xTextWon, yTextWon, NULL);
-				else
-					renderTexture(textDraw, renderer, xTextWon, yTextWon, NULL);
-				scorePlayerOne = 0;
-				scorePlayerTwo = 0;
-				isPlayerOne = 1;
-				isPlayerTwo = 0;
-			}
-			for(int i = 0; i < 4; ++i)
-				for(int j = 0; j < 5; ++j)
-				{
-					judgeFlowers[i][j] = false;
-					flowersSelect[i][j] = false;
-				}
-
-			if(onePlayerSelect)	
-				renderTexture(textWon, renderer, xTextWon, yTextWon, NULL);
-			goto renderPresent;
-		}
-
-
-
-		if(flowerSelect)
-		{
-			if(startedSelect)
-			{
-				for(int i = 0; i < 4; ++i)
-					for(int j = 0; j < 5; ++j)
-						switch(game_boardFlowers[i][j])
-						{
-							case 1:
-								renderTexture(flowers[0], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);
-							break;
-							case 2:
-								renderTexture(flowers[1], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 3:
-								renderTexture(flowers[2], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 4:
-								renderTexture(flowers[3], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 5:
-								renderTexture(flowers[4], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 6:
-								renderTexture(flowers[5], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 7:
-								renderTexture(flowers[6], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 8:
-								renderTexture(flowers[7], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);
-							break;
-							case 9:
-								renderTexture(flowers[8], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 10:
-								renderTexture(flowers[9], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-						}
-				goto renderPresent;				
-			}
-			for(int i = 0; i < 4; ++i)
-				for(int j = 0; j < 5; ++j)
-				{
-					if(!flowersSelect[i][j])
-						renderTexture(backgroundCardFleur, renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);
-					else
-						switch(game_boardFlowers[i][j])
-						{
-							case 1:
-								renderTexture(flowers[0], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);
-							break;
-							case 2:
-								renderTexture(flowers[1], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 3:
-								renderTexture(flowers[2], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 4:
-								renderTexture(flowers[3], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 5:
-								renderTexture(flowers[4], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 6:
-								renderTexture(flowers[5], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 7:
-								renderTexture(flowers[6], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 8:
-								renderTexture(flowers[7], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);
-							break;
-							case 9:
-								renderTexture(flowers[8], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-							case 10:
-								renderTexture(flowers[9], renderer, xStartCard + 300 * j, yStartCard + 200 * i, NULL);							
-							break;
-						}
-				}
-		}
-
-
-		if(!onePlayerSelect && !twoPlayerSelect)
-		{
-			renderTexture(onePlayerButton, renderer, xOnePlayer, yOnePlayer, NULL);
-			renderTexture(twoPlayerButton, renderer, xTwoPlayer, yTwoPlayer, NULL);
-			renderTexture(exitButton, renderer, xExit, yExit, NULL);
-		}
-
-		else if((onePlayerSelect || twoPlayerSelect) && (!flowerSelect && !letterSelect && !catSelect))
-		{
-			renderTexture(animal_theme_button, renderer, xLetter, yLetter, NULL);
-			renderTexture(flowerButton, renderer, xFlower, yFlower, NULL);
-			renderTexture(catButton, renderer, xCat, yCat, NULL);
-			renderTexture(returnButton, renderer, xReturn, yReturn, NULL);
-		}
-
-		if(!flowerSelect && !letterSelect && !catSelect)
-			renderTexture(textMemory, renderer, xTextMemory, yTextMemory, NULL);
-		renderPresent:SDL_RenderPresent(renderer);
-		if(startedSelect && (flowerSelect || letterSelect || catSelect))
-		{
-			SDL_Delay(1500);
-			startedSelect = 0;
-		}
-
-		if(won)
-		{
-			SDL_Delay(1500);
-			won = 0;
-			startedSelect = 1;
-		}
-
-		frameTime = SDL_GetTicks() - frameStart;
-		if(frameTime < DELAY_TIME)
-			SDL_Delay((int)(DELAY_TIME - frameTime));
-	}
-
+/*
 	SDL_DestroyTexture(background);
 	SDL_DestroyTexture(textMemory);
 	SDL_DestroyTexture(textWon);	
@@ -1216,7 +685,7 @@ int memory_game()
 	return EXIT_SUCCESS;
 	*/
 
-		}}
+		
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -1295,7 +764,7 @@ void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Textur
 // ----------------------------------------------------------------------------------------------------------------
 
 // Fonction permettant d'afficher les cartes
-void SDL_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size) {
+void SDL_all_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size) {
 	for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
 		if (cards[i].card_revealed == 1) {
 			SDL_texture_renderer(renderer, window, textures_group[i], cards[i].card_x_1, cards[i].card_y_1);
@@ -1305,6 +774,14 @@ void SDL_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *
 			SDL_texture_renderer(renderer, window, texture, cards[i].card_x_2, cards[i].card_y_2);
 		}
 	}
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant d'afficher une carte
+void SDL_card_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, Card card, int x, int y) {
+	SDL_texture_renderer(renderer, window, texture, x, y);
+	SDL_RenderPresent(renderer);
 }
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -1352,7 +829,6 @@ void position_cards(Card *cards, int rows, int game_board[rows][6], int selected
 	}
 }
 
-
 // ----------------------------------------------------------------------------------------------------------------
 
 // Fonction permettant de vérifier la zone de clic
@@ -1393,45 +869,44 @@ int has_won(int rows, int columns, int check_card[rows][columns]) {
 	}
 }
 
+// ----------------------------------------------------------------------------------------------------------------
 
+// Fonction permettant de sélectioner la première carte
+void first_card_selection(int x, int y, Card *cards, SDL_Texture **textures_group, int *first_selection, int *first_selection_x, int *first_selection_y, int game_board_size, SDL_Renderer *renderer, SDL_Window *window) {
+	for (int i = 0; i < (6 * game_board_size); i++) {
+		if (in_zone(x, y, cards[i].card_x_1, cards[i].card_x_1 + CARD_WIDTH_HEIGHT, cards[i].card_y_1, cards[i].card_y_1 + CARD_WIDTH_HEIGHT)) {
+			SDL_card_display(renderer, window, textures_group[i], cards[i], cards[i].card_x_1, cards[i].card_y_1);
+			*first_selection = cards[i].card_number;
+			*first_selection_x = cards[i].card_x_1;
+			*first_selection_y = cards[i].card_y_1;
+		}
+		if (in_zone(x, y, cards[i].card_x_2, cards[i].card_x_2 + CARD_WIDTH_HEIGHT, cards[i].card_y_2, cards[i].card_y_2 + CARD_WIDTH_HEIGHT)) {
+			SDL_card_display(renderer, window, textures_group[i], cards[i], cards[i].card_x_2, cards[i].card_y_2);
+			*first_selection = cards[i].card_number;
+			*first_selection_x = cards[i].card_x_2;
+			*first_selection_y = cards[i].card_y_2;
+		}
+	}
+}
 
+// ----------------------------------------------------------------------------------------------------------------
 
-
-
-
-
-
-/*
-
-// Fonction à trier  ---------------------------------------------------------------------------------
-bool isTwoSelect(int rows, int columns, bool tab[rows][columns], bool judge[rows][columns], int game_board[rows][columns])
-{
-	int i1 = -1, j1 = -1, i2 = -1, j2 = -1;
-	for(int i = 0; i < rows; ++i)
-		for(int j = 0; j < columns; ++j)
-		{	
-			if(tab[i][j] && !judge[i][j])
-			{
-				if(i1 == -1)
-					i1 = i, j1 = j;
-				else
-				{
-					i2 = i, j2 = j;
-					if(game_board[i1][j1] == game_board[i2][j2])
-					{
-						judge[i1][j1] = judge[i2][j2] = true;
-						return true;
-					}
-					else
-					{
-						tab[i1][j1] = tab[i2][j2] = false;
-						return false;
-					}
-
-				}
+// Fonction permettant de sélectioner la deuxième carte
+void second_card_selection(int x, int y, Card *cards, SDL_Texture **textures_group, int *second_selection, int first_selection_x, int first_selection_y, int game_board_size, SDL_Renderer *renderer, SDL_Window *window) {
+	for (int i = 0; i < (6 * game_board_size); i++) {
+		if (in_zone(x, y, cards[i].card_x_1, cards[i].card_x_1 + CARD_WIDTH_HEIGHT, cards[i].card_y_1, cards[i].card_y_1 + CARD_WIDTH_HEIGHT)) {
+			if ((cards[i].card_x_1 != first_selection_x) || (cards[i].card_y_1 != first_selection_y)) {
+				SDL_card_display(renderer, window, textures_group[i], cards[i], cards[i].card_x_1, cards[i].card_y_1);
+				SDL_Delay(1000);
+				*second_selection = cards[i].card_number;
 			}
 		}
-	return false;	
+		if (in_zone(x, y, cards[i].card_x_2, cards[i].card_x_2 + CARD_WIDTH_HEIGHT, cards[i].card_y_2, cards[i].card_y_2 + CARD_WIDTH_HEIGHT)) {
+			if ((cards[i].card_x_2 != first_selection_x) || (cards[i].card_y_2 != first_selection_y)) {
+				SDL_card_display(renderer, window, textures_group[i], cards[i], cards[i].card_x_2, cards[i].card_y_2);
+				SDL_Delay(1000);
+				*second_selection = cards[i].card_number;
+			}
+		}
+	}
 }
-*/
-
