@@ -21,6 +21,7 @@
 #define MARGIN_TOP_1 244
 #define MARGIN_TOP_2 141
 #define MARGIN_TOP_3 38
+#define CONTINUE_WIDTH_HEIGHT 70
 
 // Structure carte
 typedef struct {
@@ -54,6 +55,8 @@ int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max);
 void shuffle(int rows, int columns, int game_board[rows][columns]);
 int has_won(int game_board_size, Card *cards);
 int end_game(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_bravo, int bravo_x, int bravo_y, SDL_Texture **textures_animal, SDL_Texture **textures_pastry, SDL_Texture **textures_painting);
+void save_game_state(Card *cards, int rows, int game_board[rows][6], int selected_level, int selected_theme);
+void load_game_state(Card *animal_cards, Card *pastry_cards, Card *painting_cards, int game_board_level_1[2][6], int game_board_level_2[3][6], int game_board_level_3[4][6], int *selected_level, int *selected_theme);
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -324,6 +327,34 @@ int memory_game()
     int level_3_y = painting_theme_y + CARD_WIDTH_HEIGHT;
 
 
+    // Chargement bouton continue
+	SDL_Surface *image_continue_button = NULL;
+    image_continue_button = SDL_LoadBMP("src/images/continue.bmp");
+    if (image_continue_button == NULL) {
+			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
+			SDL_clear_back_texture(texture_back);
+			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+        SDL_destroy_window_renderer(renderer, window);
+        SDL_exit_with_error("chargement image bouton continue");
+    }
+	SDL_Texture *texture_continue_button = NULL;
+    texture_continue_button = SDL_CreateTextureFromSurface(renderer, image_continue_button);
+    SDL_FreeSurface(image_continue_button);
+    if (texture_continue_button == NULL) {
+			SDL_clear_name_texture(texture_name);
+			SDL_clear_bravo_texture(texture_bravo);
+			SDL_clear_back_texture(texture_back);
+			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+        SDL_destroy_window_renderer(renderer, window);
+        SDL_exit_with_error("creation texture bouton continue");
+    }
+	int continue_button_x = (WINDOW_WIDTH / 2) - (CONTINUE_WIDTH_HEIGHT / 2);
+	int continue_button_y = (WINDOW_HEIGHT / 2) + 250;
+
+
 	// Matrices représentant le plateau de jeu
 	int game_board_size = 0;
 
@@ -373,6 +404,7 @@ int memory_game()
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			for (int j = 0; j < i; j++) {
             	SDL_DestroyTexture(textures_animal[j]);
 			}
@@ -388,6 +420,7 @@ int memory_game()
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			for (int j = 0; j < i; j++) {
             	SDL_DestroyTexture(textures_animal[j]);
 			}
@@ -424,6 +457,7 @@ int memory_game()
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			for (int x = 0; x < 12; x++) {
             	SDL_DestroyTexture(textures_animal[x]);
 			}
@@ -442,6 +476,7 @@ int memory_game()
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			for (int x = 0; x < 12; x++) {
             	SDL_DestroyTexture(textures_animal[x]);
 			}
@@ -481,6 +516,7 @@ int memory_game()
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			for (int x = 0; x < 12; x++) {
             	SDL_DestroyTexture(textures_animal[x]);
 				SDL_DestroyTexture(textures_pastry[x]);
@@ -500,6 +536,7 @@ int memory_game()
 			SDL_clear_back_texture(texture_back);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			for (int x = 0; x < 12; x++) {
             	SDL_DestroyTexture(textures_animal[x]);
 				SDL_DestroyTexture(textures_pastry[x]);
@@ -542,6 +579,7 @@ int memory_game()
 		SDL_texture_renderer(renderer, window, texture_level_1, level_1_x, level_1_y);
 		SDL_texture_renderer(renderer, window, texture_level_2, level_2_x, level_2_y);
 		SDL_texture_renderer(renderer, window, texture_level_3, level_3_x, level_3_y);
+        SDL_texture_renderer(renderer, window, texture_continue_button, continue_button_x, continue_button_y);
 		SDL_RenderPresent(renderer);
 	}
 
@@ -577,6 +615,8 @@ int memory_game()
                             selected_level = 2;
                         } else if (!selected_level && (in_zone(event.button.x, event.button.y, level_3_x, level_3_x + CARD_WIDTH_HEIGHT, level_3_y, level_3_y + LABEL_HEIGHT))) {
                             selected_level = 3;
+                        } else if (in_zone(event.button.x, event.button.y, continue_button_x, continue_button_x + CONTINUE_WIDTH_HEIGHT, continue_button_y, continue_button_y + CONTINUE_WIDTH_HEIGHT)) {
+							selected_level = 4;
                         }
 
 						// Sélection de la première carte
@@ -612,76 +652,126 @@ int memory_game()
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
 			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+            SDL_DestroyTexture(texture_continue_button);
 			SDL_clear_renderer(renderer);
-		
-			// Mélange des cartes en fonction du niveau
-			if (selected_level == 1) {
-				game_board_size = 2;
-				shuffle(game_board_size, 6, game_board_level_1);
-			} else if (selected_level == 2) {
-				game_board_size = 3;
-				shuffle(game_board_size, 6, game_board_level_2);
-			} else if (selected_level == 3) {
-				game_board_size = 4;
-				shuffle(game_board_size, 6, game_board_level_3);
-			}
 
-			// Affichage du plateau de jeu
-			if (selected_theme == 1) {
-				if (selected_level == 1) {
-					position_cards(animal_cards, game_board_size, game_board_level_1, selected_level);
-				} else if (selected_level == 2) {
-					position_cards(animal_cards, game_board_size, game_board_level_2, selected_level);
-				} else if (selected_level == 3) {
-					position_cards(animal_cards, game_board_size, game_board_level_3, selected_level);
-				}
-				for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-					SDL_all_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
-				}
-			} else if (selected_theme == 2) {
-				if (selected_level == 1) {
-					position_cards(pastry_cards, game_board_size, game_board_level_1, selected_level);
-				} else if (selected_level == 2) {
-					position_cards(pastry_cards, game_board_size, game_board_level_2, selected_level);
-				} else if (selected_level == 3) {
-					position_cards(pastry_cards, game_board_size, game_board_level_3, selected_level);
-				}
-				for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-					SDL_all_cards_display(renderer, window, textures_pastry, texture_back, pastry_cards, game_board_size);
-				}
-			} else if (selected_theme == 3) {
-				if (selected_level == 1) {
-					position_cards(painting_cards, game_board_size, game_board_level_1, selected_level);
-				} else if (selected_level == 2) {
-					position_cards(painting_cards, game_board_size, game_board_level_2, selected_level);
-				} else if (selected_level == 3) {
-					position_cards(painting_cards, game_board_size, game_board_level_3, selected_level);
-				}
-				for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
-					SDL_all_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
-				}
-			}
+            if (selected_level != 4) {		
+                // Mélange des cartes en fonction du niveau
+                if (selected_level == 1) {
+                    game_board_size = 2;
+                    shuffle(game_board_size, 6, game_board_level_1);
+                } else if (selected_level == 2) {
+                    game_board_size = 3;
+                    shuffle(game_board_size, 6, game_board_level_2);
+                } else if (selected_level == 3) {
+                    game_board_size = 4;
+                    shuffle(game_board_size, 6, game_board_level_3);
+                }
+
+
+                // Affichage du plateau de jeu
+                if (selected_theme == 1) {
+                    if (selected_level == 1) {
+                        position_cards(animal_cards, game_board_size, game_board_level_1, selected_level);
+                        save_game_state(animal_cards, game_board_size, game_board_level_1, selected_level, selected_theme);
+                    } else if (selected_level == 2) {
+                        position_cards(animal_cards, game_board_size, game_board_level_2, selected_level);
+                        save_game_state(animal_cards, game_board_size, game_board_level_2, selected_level, selected_theme);
+                    } else if (selected_level == 3) {
+                        position_cards(animal_cards, game_board_size, game_board_level_3, selected_level);
+                        save_game_state(animal_cards, game_board_size, game_board_level_3, selected_level, selected_theme);
+                    }
+                    for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
+                        SDL_all_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
+                    }
+                } else if (selected_theme == 2) {
+                    if (selected_level == 1) {
+                        position_cards(pastry_cards, game_board_size, game_board_level_1, selected_level);
+                        save_game_state(pastry_cards, game_board_size, game_board_level_1, selected_level, selected_theme);
+                    } else if (selected_level == 2) {
+                        position_cards(pastry_cards, game_board_size, game_board_level_2, selected_level);
+                        save_game_state(pastry_cards, game_board_size, game_board_level_2, selected_level, selected_theme);
+                    } else if (selected_level == 3) {
+                        position_cards(pastry_cards, game_board_size, game_board_level_3, selected_level);
+                        save_game_state(pastry_cards, game_board_size, game_board_level_3, selected_level, selected_theme);
+                    }
+                    for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
+                        SDL_all_cards_display(renderer, window, textures_pastry, texture_back, pastry_cards, game_board_size);
+                    }
+                } else if (selected_theme == 3) {
+                    if (selected_level == 1) {
+                        position_cards(painting_cards, game_board_size, game_board_level_1, selected_level);
+                        save_game_state(painting_cards, game_board_size, game_board_level_1, selected_level, selected_theme);
+                    } else if (selected_level == 2) {
+                        position_cards(painting_cards, game_board_size, game_board_level_2, selected_level);
+                        save_game_state(painting_cards, game_board_size, game_board_level_2, selected_level, selected_theme);
+                    } else if (selected_level == 3) {
+                        position_cards(painting_cards, game_board_size, game_board_level_3, selected_level);
+                        save_game_state(painting_cards, game_board_size, game_board_level_3, selected_level, selected_theme);
+                    }
+                    for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
+                        SDL_all_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
+                    }
+                }
+            } else if (selected_level = 4) {
+                load_game_state(animal_cards, pastry_cards, painting_cards, game_board_level_1, game_board_level_2, game_board_level_3, &selected_level, &selected_theme);
+                for (int i = 0; i < ((6 * game_board_size) / 2); i++) {
+                    if (selected_theme == 1) {
+                        SDL_all_cards_display(renderer, window, textures_animal, texture_back, animal_cards, game_board_size);
+                    } else if (selected_theme == 2) {
+                        SDL_all_cards_display(renderer, window, textures_pastry, texture_back, pastry_cards, game_board_size);
+                    } else if (selected_theme == 3) {
+                        SDL_all_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
+                    }
+                }
+            }
+
 			SDL_RenderPresent(renderer);
 			game_started = 1;
 		}
+
 
 		// Instruction si deux cartes ont été sélectionnées
 		if (game_started && first_selection && second_selection) {
 			if (selected_theme == 1) {
 				cards_verification(animal_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_animal, texture_back);
-				if (has_won(game_board_size, animal_cards)) {
+                if (game_board_size == 1) {
+                    save_game_state(animal_cards, game_board_size, game_board_level_1, selected_level, selected_theme);
+                } else if (game_board_size == 2) {
+                    save_game_state(animal_cards, game_board_size, game_board_level_2, selected_level, selected_theme);
+                } else if (game_board_size == 3) {
+                    save_game_state(animal_cards, game_board_size, game_board_level_3, selected_level, selected_theme);
+                }
+                
+                if (has_won(game_board_size, animal_cards)) {
 					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
 					return 1;
 				}
 			} else if (selected_theme == 2) {
 				cards_verification(pastry_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_pastry, texture_back);
-				if (has_won(game_board_size, pastry_cards)) {
+                if (game_board_size == 1) {
+                    save_game_state(pastry_cards, game_board_size, game_board_level_1, selected_level, selected_theme);
+                } else if (game_board_size == 2) {
+                    save_game_state(pastry_cards, game_board_size, game_board_level_2, selected_level, selected_theme);
+                } else if (game_board_size == 3) {
+                    save_game_state(pastry_cards, game_board_size, game_board_level_3, selected_level, selected_theme);
+                }
+
+                if (has_won(game_board_size, pastry_cards)) {
 					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
 					return 1;
 				}
 			} else if (selected_theme == 3) {
 				cards_verification(painting_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_painting, texture_back);
-				if (has_won(game_board_size, painting_cards)) {
+				if (game_board_size == 1) {
+                    save_game_state(painting_cards, game_board_size, game_board_level_1, selected_level, selected_theme);
+                } else if (game_board_size == 2) {
+                    save_game_state(painting_cards, game_board_size, game_board_level_2, selected_level, selected_theme);
+                } else if (game_board_size == 3) {
+                    save_game_state(painting_cards, game_board_size, game_board_level_3, selected_level, selected_theme);
+                }
+
+                if (has_won(game_board_size, painting_cards)) {
 					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
 					return 1;
 				}
@@ -962,4 +1052,101 @@ int end_game(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_br
 	SDL_clear_renderer(renderer);
 	SDL_DestroyTexture(texture_bravo);
 	return 1;
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de sauvegarder le jeu
+void save_game_state(Card *cards, int rows, int game_board[rows][6], int selected_level, int selected_theme) {
+    FILE *file = fopen("save.txt", "w");
+
+    if (file == NULL) {
+        printf("Erreur lors de l'ouverture du fichier de sauvegarde.\n");
+        return;
+    }
+
+    // Sauvegarde thème et niveau choisi
+    fprintf(file, "%d\n", selected_level);
+    fprintf(file, "%d\n", selected_theme);
+
+    // Sauvegarde des données des cartes
+    for (int i = 0; i < (6 * rows / 2); i++) {
+        fprintf(file, "%d %d %d %d %d %d %d\n",
+            cards[i].card_number, cards[i].card_revealed, cards[i].card_x_1, cards[i].card_y_1,
+            cards[i].card_x_2, cards[i].card_y_2, cards[i].card_positioned);
+    }
+
+    // Sauvegarde des données de la matrice game_board
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < 6; j++) {
+            fprintf(file, "%d ", game_board[i][j]);
+        }
+        fprintf(file, "\n");
+    }
+
+    fclose(file);
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de récupérer la sauvegarde du jeu
+void load_game_state(Card *animal_cards, Card *pastry_cards, Card *painting_cards, int game_board_level_1[2][6], int game_board_level_2[3][6], int game_board_level_3[4][6], int *selected_level, int *selected_theme) {
+    FILE *file = fopen("save.txt", "r");
+
+    if (file == NULL) {
+        printf("Erreur lors de l'ouverture du fichier de sauvegarde.\n");
+        return;
+    }
+
+    // Chargement du niveau et du thème choisis
+    fscanf(file, "%d\n", selected_level);
+    fscanf(file, "%d\n", selected_theme);
+
+    // Chargement des données du plateau de jeu
+    int rows = 0;
+    if (*selected_level == 1) {
+        rows = 2;
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 6; j++) {
+                fscanf(file, "%d ", &game_board_level_1[i][j]);
+            }
+            fscanf(file, "\n");
+        }
+    } else if (*selected_level == 2) {
+        rows = 3;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 6; j++) {
+                fscanf(file, "%d ", &game_board_level_2[i][j]);
+            }
+            fscanf(file, "\n");
+        }
+    } else if (*selected_level == 3) {
+        rows = 4;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 6; j++) {
+                fscanf(file, "%d ", &game_board_level_3[i][j]);
+            }
+            fscanf(file, "\n");
+        }
+    }
+
+
+    // Chargement des données des cartes
+    for (int i = 0; i < (6 * rows / 2); i++) {
+        if (*selected_theme == 1) {
+            fscanf(file, "%d %d %d %d %d %d %d\n",
+            &animal_cards[i].card_number, &animal_cards[i].card_revealed, &animal_cards[i].card_x_1, &animal_cards[i].card_y_1,
+            &animal_cards[i].card_x_2, &animal_cards[i].card_y_2, &animal_cards[i].card_positioned);
+        } else if (*selected_theme == 2) {
+            fscanf(file, "%d %d %d %d %d %d %d\n",
+            &pastry_cards[i].card_number, &pastry_cards[i].card_revealed, &pastry_cards[i].card_x_1, &pastry_cards[i].card_y_1,
+            &pastry_cards[i].card_x_2, &pastry_cards[i].card_y_2, &pastry_cards[i].card_positioned);
+        } else if (*selected_theme == 3) {
+            fscanf(file, "%d %d %d %d %d %d %d\n",
+            &painting_cards[i].card_number, &painting_cards[i].card_revealed, &painting_cards[i].card_x_1, &painting_cards[i].card_y_1,
+            &painting_cards[i].card_x_2, &painting_cards[i].card_y_2, &painting_cards[i].card_positioned);
+        }
+    }
+
+    fclose(file);
 }
