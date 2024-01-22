@@ -671,16 +671,19 @@ int memory_game()
 				cards_verification(animal_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_animal, texture_back);
 				if (has_won(game_board_size, animal_cards)) {
 					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
+					return 1;
 				}
 			} else if (selected_theme == 2) {
 				cards_verification(pastry_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_pastry, texture_back);
 				if (has_won(game_board_size, pastry_cards)) {
 					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
+					return 1;
 				}
 			} else if (selected_theme == 3) {
 				cards_verification(painting_cards, &second_selection, &first_selection, game_board_size, renderer, window, textures_painting, texture_back);
 				if (has_won(game_board_size, painting_cards)) {
 					end_game(renderer, window, texture_bravo, bravo_x, bravo_y, textures_animal, textures_pastry, textures_painting);
+					return 1;
 				}
 			}
 
@@ -958,5 +961,5 @@ int end_game(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_br
 	SDL_Delay(3000);
 	SDL_clear_renderer(renderer);
 	SDL_DestroyTexture(texture_bravo);
-	exit(EXIT_SUCCESS);
+	return 1;
 }
