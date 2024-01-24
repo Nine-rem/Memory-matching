@@ -21,7 +21,6 @@
 #define MARGIN_TOP_1 244
 #define MARGIN_TOP_2 141
 #define MARGIN_TOP_3 38
-#define CONTINUE_WIDTH_HEIGHT 70
 
 // Structure carte
 typedef struct {
@@ -351,8 +350,8 @@ int memory_game()
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("creation texture bouton continue");
     }
-	int continue_button_x = (WINDOW_WIDTH / 2) - (CONTINUE_WIDTH_HEIGHT / 2);
-	int continue_button_y = (WINDOW_HEIGHT / 2) + 250;
+	int continue_button_x = (WINDOW_WIDTH / 2) - (CARD_WIDTH_HEIGHT / 2);
+	int continue_button_y = (WINDOW_HEIGHT / 2) + 300;
 
 
 	// Matrices représentant le plateau de jeu
@@ -616,7 +615,7 @@ int memory_game()
                             selected_level = 2;
                         } else if (!selected_level && (in_zone(event.button.x, event.button.y, level_3_x, level_3_x + CARD_WIDTH_HEIGHT, level_3_y, level_3_y + LABEL_HEIGHT))) {
                             selected_level = 3;
-                        } else if (!selected_level && (in_zone(event.button.x, event.button.y, continue_button_x, continue_button_x + CONTINUE_WIDTH_HEIGHT, continue_button_y, continue_button_y + CONTINUE_WIDTH_HEIGHT))) {
+                        } else if (!selected_level && (in_zone(event.button.x, event.button.y, continue_button_x, continue_button_x + CARD_WIDTH_HEIGHT, continue_button_y, continue_button_y + LABEL_HEIGHT))) {
 							selected_level = 4;
                         }
 
