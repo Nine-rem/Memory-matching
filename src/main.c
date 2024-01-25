@@ -4,11 +4,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <time.h>
 #include <openssl/aes.h>
 #include <openssl/rand.h>
+#include <sqlite3.h>
 
 
 
@@ -49,6 +51,7 @@ void SDL_clear_renderer(SDL_Renderer *renderer);
 void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, int x, int y);
 void SDL_all_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size);
 void SDL_card_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, Card card, int x, int y);
+void load_path_from_db(const char *table, const char **paths);
 void create_cards(Card *cards, SDL_Texture **textures);
 void position_cards(Card *cards, int rows, int game_board[rows][6], int selected_level);
 void first_card_selection(int x, int y, Card *cards, SDL_Texture **textures_group, int *first_selection, int *first_selection_x, int *first_selection_y, int game_board_size, SDL_Renderer *renderer, SDL_Window *window);
@@ -113,8 +116,8 @@ int memory_game()
 	SDL_SetWindowTitle(window, "Memory Matching Game");
 
 
-	// Couleur de fond
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	// Couleur de fond en fonction du mode choisi
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_RenderClear(renderer);
 
 
@@ -413,23 +416,10 @@ int memory_game()
 	};
 
 
-	// Chargement images des cartes thème Pâtisserie
+	// Chargement images des cartes thème Animal
 	SDL_Texture *textures_animal[12];
-
-	const char *path_animal[12] = {
-    	"src/images/animals/1.bmp",
-		"src/images/animals/2.bmp",
-		"src/images/animals/3.bmp",
-		"src/images/animals/4.bmp",
-		"src/images/animals/5.bmp",
-		"src/images/animals/6.bmp",
-		"src/images/animals/7.bmp",
-		"src/images/animals/8.bmp",
-		"src/images/animals/9.bmp",
-		"src/images/animals/10.bmp",
-		"src/images/animals/11.bmp",
-		"src/images/animals/12.bmp"
-	};
+	const char *path_animal[12];
+	load_path_from_db("animal_images", path_animal);
 
 	for (int i = 0; i < 12; i++) {
 		SDL_Surface *image_animal = NULL;
@@ -470,21 +460,8 @@ int memory_game()
 
 	// Chargement images des cartes thème Pâtisserie
 	SDL_Texture *textures_pastry[12];
-
-	const char *path_pastry[12] = {
-    	"src/images/pastries/1.bmp",
-		"src/images/pastries/2.bmp",
-		"src/images/pastries/3.bmp",
-		"src/images/pastries/4.bmp",
-		"src/images/pastries/5.bmp",
-		"src/images/pastries/6.bmp",
-		"src/images/pastries/7.bmp",
-		"src/images/pastries/8.bmp",
-		"src/images/pastries/9.bmp",
-		"src/images/pastries/10.bmp",
-		"src/images/pastries/11.bmp",
-		"src/images/pastries/12.bmp"
-	};
+	const char *path_pastry[12];
+	load_path_from_db("pastry_images", path_pastry);
 
 	for (int i = 0; i < 12; i++) {
 		SDL_Surface *image_pastry = NULL;
@@ -531,21 +508,8 @@ int memory_game()
 
 	// Chargement images des cartes thème Peintures
 	SDL_Texture *textures_painting[12];
-
-	const char *path_painting[12] = {
-    	"src/images/paintings/1.bmp",
-		"src/images/paintings/2.bmp",
-		"src/images/paintings/3.bmp",
-		"src/images/paintings/4.bmp",
-		"src/images/paintings/5.bmp",
-		"src/images/paintings/6.bmp",
-		"src/images/paintings/7.bmp",
-		"src/images/paintings/8.bmp",
-		"src/images/paintings/9.bmp",
-		"src/images/paintings/10.bmp",
-		"src/images/paintings/11.bmp",
-		"src/images/paintings/12.bmp"
-	};
+	const char *path_painting[12];
+	load_path_from_db("painting_images", path_painting);
 
 	for (int i = 0; i < 12; i++) {
 		SDL_Surface *image_painting = NULL;
@@ -758,7 +722,7 @@ int memory_game()
                         SDL_all_cards_display(renderer, window, textures_painting, texture_back, painting_cards, game_board_size);
                     }
                 }
-            } else if (selected_level = 4) {
+            } else if (selected_level == 4) {
                 load_game_data(animal_cards, pastry_cards, painting_cards, &game_board_size, game_board_level_1, game_board_level_2, game_board_level_3, &selected_level, &selected_theme);
 				for (int i = 0; i < 6 * game_board_size / 2; i++) {
                     if (selected_theme == 1) {
@@ -1237,4 +1201,33 @@ void load_game_state(int *game_finished) {
     }
     fscanf(file, "%d\n", game_finished);
     fclose(file);
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de récupérer le chemin des images dans la base de donnée
+void load_path_from_db(const char *table, const char **paths) {
+    sqlite3 *database;
+    sqlite3_stmt *statement;
+    int result = sqlite3_open("images_path.db", &database);
+    if (result != SQLITE_OK) {
+    	printf("Erreur ouverture base de donnée\n");
+    	sqlite3_close(database);
+    }
+
+    char query[100];
+	snprintf(query, sizeof(query), "SELECT path FROM %s", table);
+	result = sqlite3_prepare_v2(database, query, -1, &statement, NULL);
+    if (result != SQLITE_OK) {
+        printf("Erreur préparation requête\n");
+        sqlite3_close(database);
+    }
+
+    int i = 0;
+    while (sqlite3_step(statement) == SQLITE_ROW) {
+        paths[i] = strdup((const char *)sqlite3_column_text(statement, 0));
+        i++;
+    }
+    sqlite3_finalize(statement);
+    sqlite3_close(database);
 }
