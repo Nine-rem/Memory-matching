@@ -1347,6 +1347,10 @@ void change_mode(int theme, SDL_Renderer *renderer) {
 int decrypt() {
         system("openssl aes-256-cbc -d -a -pbkdf2 -in conf.txt.enc -out conf.txt.new -pass pass:esgi");
         FILE *file = fopen("conf.txt.new", "r");
+		if (file == NULL) {
+			printf("Erreur lors de l'ouverture du fichier de theme.\n");
+			return EXIT_FAILURE;
+	}	
         int theme = -1;
         fscanf(file, "%d", &theme);
         fclose(file);
@@ -1358,6 +1362,10 @@ int decrypt() {
 // Fonction permettant de chiffrer le contenu du fichier de configuration
 void encrypt(int theme) {
     FILE *file = fopen("conf.txt", "w");
+	if (file == NULL) {
+		printf("Erreur lors de l'ouverture du fichier de theme.\n");
+		return;
+    }
     fprintf(file, "%d", theme);
     fclose(file);
     system( "openssl aes-256-cbc -a -pbkdf2 -in conf.txt -out conf.txt.enc -pass pass:esgi");
