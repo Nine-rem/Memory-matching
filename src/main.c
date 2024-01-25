@@ -62,7 +62,8 @@ void save_game_data(Card *cards, int rows, int game_board[rows][6], int selected
 void load_game_data(Card *animal_cards, Card *pastry_cards, Card *painting_cards, int *game_board_size, int game_board_level_1[2][6], int game_board_level_2[3][6], int game_board_level_3[4][6], int *selected_level, int *selected_theme);
 void save_game_state(int game_finished);
 void load_game_state(int *game_finished);
-
+void change_mode(int theme,SDL_Renderer *renderer);
+int decrypt();
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -114,7 +115,8 @@ int memory_game()
 
 
 	// Couleur de fond
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	int theme = decrypt();
+    change_mode(theme,renderer);
 	SDL_RenderClear(renderer);
 
 
@@ -1237,4 +1239,40 @@ void load_game_state(int *game_finished) {
     }
     fscanf(file, "%d\n", game_finished);
     fclose(file);
+}
+
+void change_mode(int theme,SDL_Renderer *renderer){
+	if (theme == 0){
+		SDL_SetRenderDrawColor(renderer,255,255,255,255);
+	
+	}else if (theme == 1){
+		SDL_SetRenderDrawColor(renderer,30,30,30,255);
+	}else{
+		exit(EXIT_FAILURE);
+	}
+}
+
+int decrypt() {
+        system("openssl aes-256-cbc -d -a -pbkdf2 -in conf.txt.enc -out conf.txt.new -pass env:esgi");
+        FILE *file = fopen("conf.txt.new", "r");
+        int theme = -1;
+        fscanf(file, "%d", &theme);
+        fclose(file);
+        printf("Decrypted theme: %d\n", theme);
+		return theme;
+		
+}
+
+
+void encrypt(int theme) {
+    FILE *file = fopen("conf.txt", "w");
+    
+    fprintf(file, "%d", theme);
+    fclose(file);
+
+    char command[100];
+    snprintf(command, sizeof(command), "openssl aes-256-cbc -a -pbkdf2 -in conf.txt -out conf.txt.enc");
+    system(command);
+    snprintf(command, sizeof(command),"del conf.txt");
+    system(command);
 }
