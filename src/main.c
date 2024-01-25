@@ -816,11 +816,6 @@ int memory_game()
             }
 
 			play_music();
-			if (Mix_PlayingMusic()) {
-				printf("De la musique est en cours de lecture.\n");
-			} else {
-				printf("Aucune musique n'est en cours de lecture.\n");
-			}
 			SDL_RenderPresent(renderer);
 			game_started = 1;
 		}
