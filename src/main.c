@@ -26,6 +26,7 @@
 #define MARGIN_TOP_1 244
 #define MARGIN_TOP_2 141
 #define MARGIN_TOP_3 38
+#define MODE_WIDTH_HEIGHT 30
 
 // Structure carte
 typedef struct {
@@ -47,10 +48,12 @@ void SDL_clear_bravo_texture(SDL_Texture *texture_bravo);
 void SDL_clear_theme_texture(SDL_Texture *texture_animal_theme, SDL_Texture *texture_pastry_theme, SDL_Texture *texture_painting_theme);
 void SDL_clear_level_texture(SDL_Texture *texture_level_1, SDL_Texture *texture_level_2, SDL_Texture *texture_level_3);
 void SDL_clear_back_texture(SDL_Texture *texture_back);
+void SDL_clear_mode_textures(SDL_Texture *texture_dark_mode, SDL_Texture *texture_light_mode);
 void SDL_clear_renderer(SDL_Renderer *renderer);
 void SDL_texture_renderer(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, int x, int y);
 void SDL_all_cards_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture **textures_group, SDL_Texture *texture, Card *cards, int game_board_size);
 void SDL_card_display(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture, Card card, int x, int y);
+void menu(int game_finished, int dark_mode, SDL_Texture *texture_dark_mode, SDL_Texture *texture_continue_button, SDL_Texture *texture_light_mode, int mode_x, int mode_y, SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_name, SDL_Texture *texture_animal_theme, SDL_Texture *texture_pastry_theme, SDL_Texture *texture_painting_theme, SDL_Texture *texture_level_1, SDL_Texture *texture_level_2, SDL_Texture *texture_level_3, int level_1_x, int level_1_y, int level_2_x, int level_2_y, int level_3_x, int level_3_y, int painting_theme_x, int painting_theme_y, int pastry_theme_x, int pastry_theme_y, int animal_theme_x, int animal_theme_y, int name_x, int name_y, int continue_button_x, int continue_button_y);
 void load_path_from_db(const char *table, const char **paths);
 void create_cards(Card *cards, SDL_Texture **textures);
 void position_cards(Card *cards, int rows, int game_board[rows][6], int selected_level);
@@ -65,6 +68,9 @@ void save_game_data(Card *cards, int rows, int game_board[rows][6], int selected
 void load_game_data(Card *animal_cards, Card *pastry_cards, Card *painting_cards, int *game_board_size, int game_board_level_1[2][6], int game_board_level_2[3][6], int game_board_level_3[4][6], int *selected_level, int *selected_theme);
 void save_game_state(int game_finished);
 void load_game_state(int *game_finished);
+void change_mode(int dark_mode, SDL_Renderer *renderer);
+int decrypt();
+void encrypt(int dark_mode);
 
 
 
@@ -117,8 +123,8 @@ int memory_game()
 
 
 	// Couleur de fond en fonction du mode choisi
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_RenderClear(renderer);
+	int dark_mode = decrypt();
+    change_mode(dark_mode,renderer);
 
 
 	// Chargement nom du jeu
@@ -394,6 +400,73 @@ int memory_game()
 	int continue_button_y = (WINDOW_HEIGHT / 2) + 300;
 
 
+	// Chargement bouton dark mode
+	int mode_x = 1050;
+    int mode_y = WINDOW_HEIGHT / 2;
+
+	SDL_Surface *image_dark_mode = NULL;
+	image_dark_mode = SDL_LoadBMP("src/images/dark_mode.bmp");
+	if (image_dark_mode == NULL) {
+		SDL_FreeSurface(memory_icon);
+		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
+		SDL_clear_back_texture(texture_back);
+		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+		SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+		SDL_DestroyTexture(texture_continue_button);
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("chargement image dark mode");
+	}
+
+	SDL_Texture *texture_dark_mode = NULL;
+	texture_dark_mode = SDL_CreateTextureFromSurface(renderer, image_dark_mode);
+	SDL_FreeSurface(image_dark_mode);
+	if (texture_dark_mode == NULL) {
+		SDL_FreeSurface(memory_icon);
+		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
+		SDL_clear_back_texture(texture_back);
+		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+		SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+		SDL_DestroyTexture(texture_continue_button);
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("creation texture dark mode");
+	}
+
+
+	// Chargement bouton light mode
+	SDL_Surface *image_light_mode = NULL;
+	image_light_mode = SDL_LoadBMP("src/images/light_mode.bmp");
+	if (image_light_mode == NULL) {
+		SDL_FreeSurface(memory_icon);
+		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
+		SDL_clear_back_texture(texture_back);
+		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+		SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+		SDL_DestroyTexture(texture_continue_button);
+		SDL_DestroyTexture(texture_dark_mode);
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("chargement image light mode");
+	}
+
+	SDL_Texture *texture_light_mode = NULL;
+	texture_light_mode = SDL_CreateTextureFromSurface(renderer, image_light_mode);
+	SDL_FreeSurface(image_light_mode);
+	if (texture_light_mode == NULL) {
+		SDL_FreeSurface(memory_icon);
+		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
+		SDL_clear_back_texture(texture_back);
+		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+		SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+		SDL_DestroyTexture(texture_continue_button);
+		SDL_DestroyTexture(texture_dark_mode);
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("creation texture light mode");
+	}
+
+
 	// Matrices représentant le plateau de jeu
 	int game_board_size = 0;
 
@@ -577,19 +650,10 @@ int memory_game()
 	int game_finished = 0;
 	load_game_state(&game_finished);
 
+
 	// Affichage choix du niveau et du thème
 	if (!selected_theme && !selected_level && !game_started) {
-		SDL_texture_renderer(renderer, window, texture_name, name_x, name_y);
-		SDL_texture_renderer(renderer, window, texture_animal_theme, animal_theme_x, animal_theme_y);
-		SDL_texture_renderer(renderer, window, texture_pastry_theme, pastry_theme_x, pastry_theme_y);
-		SDL_texture_renderer(renderer, window, texture_painting_theme, painting_theme_x, painting_theme_y);
-		SDL_texture_renderer(renderer, window, texture_level_1, level_1_x, level_1_y);
-		SDL_texture_renderer(renderer, window, texture_level_2, level_2_x, level_2_y);
-		SDL_texture_renderer(renderer, window, texture_level_3, level_3_x, level_3_y);
-		if (!game_finished) {
-			SDL_texture_renderer(renderer, window, texture_continue_button, continue_button_x, continue_button_y);
-		}
-		SDL_RenderPresent(renderer);
+		menu(game_finished, dark_mode, texture_dark_mode, texture_continue_button, texture_light_mode, mode_x, mode_y, renderer, window, texture_name, texture_animal_theme, texture_pastry_theme, texture_painting_theme, texture_level_1, texture_level_2, texture_level_3, level_1_x, level_1_y, level_2_x, level_2_y, level_3_x, level_3_y, painting_theme_x, painting_theme_y, pastry_theme_x, pastry_theme_y, animal_theme_x, animal_theme_y, name_x, name_y, continue_button_x, continue_button_y);
 	}
 
 
@@ -627,6 +691,20 @@ int memory_game()
                         } else if (!selected_level && !game_finished && (in_zone(event.button.x, event.button.y, continue_button_x, continue_button_x + CARD_WIDTH_HEIGHT, continue_button_y, continue_button_y + LABEL_HEIGHT))) {
 							selected_level = 4;
                         }
+
+						// Changement de mode
+						if (!game_started && in_zone(event.button.x, event.button.y, mode_x, mode_x + MODE_WIDTH_HEIGHT,  mode_y, mode_y + MODE_WIDTH_HEIGHT)) {
+							if (!dark_mode) {
+								dark_mode = 1;
+							} else {
+								dark_mode = 0;
+							}
+							encrypt(dark_mode);
+							change_mode(dark_mode,renderer);
+							menu(game_finished, dark_mode, texture_dark_mode, texture_continue_button, texture_light_mode, mode_x, mode_y, renderer, window, texture_name, texture_animal_theme, texture_pastry_theme, texture_painting_theme, texture_level_1, texture_level_2, texture_level_3, level_1_x, level_1_y, level_2_x, level_2_y, level_3_x, level_3_y, painting_theme_x, painting_theme_y, pastry_theme_x, pastry_theme_y, animal_theme_x, animal_theme_y, name_x, name_y, continue_button_x, continue_button_y);
+							SDL_RenderPresent(renderer);
+						}
+						
 
 						// Sélection de la première carte
 						if ((game_started) && (!first_selection) && (!second_selection)) {
@@ -876,6 +954,14 @@ void SDL_clear_back_texture(SDL_Texture *texture_back) {
 void SDL_clear_renderer(SDL_Renderer *renderer) {
 	SDL_RenderClear(renderer);
 	SDL_RenderPresent(renderer);
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant d'effacer les textures du mode
+void SDL_clear_mode_textures(SDL_Texture *texture_dark_mode, SDL_Texture *texture_light_mode) {
+	SDL_DestroyTexture(texture_dark_mode);
+	SDL_DestroyTexture(texture_light_mode);
 }
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -1230,4 +1316,67 @@ void load_path_from_db(const char *table, const char **paths) {
     }
     sqlite3_finalize(statement);
     sqlite3_close(database);
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de changer la couleur de fond en fonction du mode choisi
+void change_mode(int theme, SDL_Renderer *renderer) {
+	if (theme) {
+		SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
+	} else {
+		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	}
+	SDL_RenderClear(renderer);
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de déchiffrer le contenu du fichier de configuration
+int decrypt() {
+        system("openssl aes-256-cbc -d -a -pbkdf2 -in conf.txt.enc -out conf.txt.new -pass pass:esgi");
+        FILE *file = fopen("conf.txt.new", "r");
+        int theme = -1;
+        fscanf(file, "%d", &theme);
+        fclose(file);
+		return theme;		
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de chiffrer le contenu du fichier de configuration
+void encrypt(int theme) {
+    FILE *file = fopen("conf.txt", "w");
+    fprintf(file, "%d", theme);
+    fclose(file);
+    system( "openssl aes-256-cbc -a -pbkdf2 -in conf.txt -out conf.txt.enc -pass pass:esgi");
+    system("del conf.txt");
+}
+
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant d'afficher la fenêtre d'accueil
+void menu(int game_finished, int dark_mode, SDL_Texture *texture_dark_mode, SDL_Texture *texture_continue_button, SDL_Texture *texture_light_mode, int mode_x, int mode_y, SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_name, SDL_Texture *texture_animal_theme, SDL_Texture *texture_pastry_theme, SDL_Texture *texture_painting_theme, SDL_Texture *texture_level_1, SDL_Texture *texture_level_2, SDL_Texture *texture_level_3, int level_1_x, int level_1_y, int level_2_x, int level_2_y, int level_3_x, int level_3_y, int painting_theme_x, int painting_theme_y, int pastry_theme_x, int pastry_theme_y, int animal_theme_x, int animal_theme_y, int name_x, int name_y, int continue_button_x, int continue_button_y) {
+	if (!dark_mode) {
+		SDL_texture_renderer(renderer, window, texture_light_mode, mode_x, mode_y);
+	} else if (dark_mode) {
+		SDL_texture_renderer(renderer, window, texture_dark_mode, mode_x, mode_y);
+	}
+	change_mode(dark_mode,renderer);
+	if (dark_mode) {
+		SDL_texture_renderer(renderer, window, texture_light_mode, mode_x, mode_y);
+	} else if (!dark_mode) {
+		SDL_texture_renderer(renderer, window, texture_dark_mode, mode_x, mode_y);
+	}
+	SDL_texture_renderer(renderer, window, texture_name, name_x, name_y);
+	SDL_texture_renderer(renderer, window, texture_animal_theme, animal_theme_x, animal_theme_y);
+	SDL_texture_renderer(renderer, window, texture_pastry_theme, pastry_theme_x, pastry_theme_y);
+	SDL_texture_renderer(renderer, window, texture_painting_theme, painting_theme_x, painting_theme_y);
+	SDL_texture_renderer(renderer, window, texture_level_1, level_1_x, level_1_y);
+	SDL_texture_renderer(renderer, window, texture_level_2, level_2_x, level_2_y);
+	SDL_texture_renderer(renderer, window, texture_level_3, level_3_x, level_3_y);
+	if (!game_finished) {
+		SDL_texture_renderer(renderer, window, texture_continue_button, continue_button_x, continue_button_y);
+	}
+	SDL_RenderPresent(renderer);
 }
