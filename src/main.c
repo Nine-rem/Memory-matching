@@ -29,6 +29,7 @@
 #define MARGIN_TOP_3 38
 #define MODE_WIDTH_HEIGHT 30
 
+
 // Structure carte
 typedef struct {
     SDL_Texture *card_image;
@@ -69,6 +70,7 @@ void save_game_data(Card *cards, int rows, int game_board[rows][6], int selected
 void load_game_data(Card *animal_cards, Card *pastry_cards, Card *painting_cards, int *game_board_size, int game_board_level_1[2][6], int game_board_level_2[3][6], int game_board_level_3[4][6], int *selected_level, int *selected_theme);
 void save_game_state(int game_finished);
 void load_game_state(int *game_finished);
+void change_color(SDL_Surface *surface);
 void change_mode(int dark_mode, SDL_Renderer *renderer);
 int decrypt();
 void encrypt(int dark_mode);
@@ -137,6 +139,11 @@ int memory_game()
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("chargement image nom");
     }
+
+	if (dark_mode) {
+        change_color(image_name);
+    }
+
 	SDL_Texture *texture_name = NULL;
     texture_name = SDL_CreateTextureFromSurface(renderer, image_name);
     SDL_FreeSurface(image_name);
@@ -161,6 +168,7 @@ int memory_game()
 	SDL_Texture *texture_bravo = NULL;
     texture_bravo = SDL_CreateTextureFromSurface(renderer, image_bravo);
     SDL_FreeSurface(image_bravo);
+
     if (texture_bravo == NULL) {
 		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
@@ -419,7 +427,6 @@ int memory_game()
 		SDL_destroy_window_renderer(renderer, window);
 		SDL_exit_with_error("chargement image dark mode");
 	}
-
 	SDL_Texture *texture_dark_mode = NULL;
 	texture_dark_mode = SDL_CreateTextureFromSurface(renderer, image_dark_mode);
 	SDL_FreeSurface(image_dark_mode);
@@ -451,6 +458,10 @@ int memory_game()
 		SDL_destroy_window_renderer(renderer, window);
 		SDL_exit_with_error("chargement image light mode");
 	}
+
+	if (dark_mode) {
+        change_color(image_light_mode);
+    }
 
 	SDL_Texture *texture_light_mode = NULL;
 	texture_light_mode = SDL_CreateTextureFromSurface(renderer, image_light_mode);
@@ -1325,7 +1336,7 @@ void load_path_from_db(const char *table, const char **paths) {
 // Fonction permettant de changer la couleur de fond en fonction du mode choisi
 void change_mode(int theme, SDL_Renderer *renderer) {
 	if (theme) {
-		SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	} else {
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	}
@@ -1391,6 +1402,7 @@ void menu(int game_finished, int dark_mode, SDL_Texture *texture_dark_mode, SDL_
 	SDL_RenderPresent(renderer);
 }
 
+
 void play_music(){
 
 	Mix_Music *music;
@@ -1405,4 +1417,38 @@ void play_music(){
 
 	Mix_PlayMusic(music, -1);
 	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+
+}
+// ----------------------------------------------------------------------------------------------------------------
+
+// Fonction permettant de changer le thème clair ou sombre
+void change_color(SDL_Surface *surface) {
+    SDL_LockSurface(surface);
+
+    Uint8 *pixels = (Uint8 *)surface->pixels;
+    for (int y = 0; y < surface->h; y++) {
+        for (int x = 0; x < surface->w; x++) {
+            Uint32 *p = (Uint32 *)(pixels + y * surface->pitch + x * surface->format->BytesPerPixel);
+
+            Uint8 r, g, b;
+            SDL_GetRGB(*p, surface->format, &r, &g, &b);
+
+            // Modifier les valeurs RGB ici, par exemple, inverser les couleurs
+            r = 255 - r;
+            g = 255 - g;
+            b = 255 - b;
+
+			if (!(r == g && g == b)) {
+                // Calculate the average of the RGB components for grayscale
+                r = 0;
+                g = 0;
+                b = 0;
+            }
+
+            *p = SDL_MapRGB(surface->format, r, g, b);
+        }
+    }
+
+    SDL_UnlockSurface(surface);
+
 }
