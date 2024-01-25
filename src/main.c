@@ -24,6 +24,7 @@
 #define MARGIN_TOP_1 244
 #define MARGIN_TOP_2 141
 #define MARGIN_TOP_3 38
+#define BOUTON_BW_HEIGHT 50
 
 // Structure carte
 typedef struct {
@@ -62,8 +63,9 @@ void save_game_data(Card *cards, int rows, int game_board[rows][6], int selected
 void load_game_data(Card *animal_cards, Card *pastry_cards, Card *painting_cards, int *game_board_size, int game_board_level_1[2][6], int game_board_level_2[3][6], int game_board_level_3[4][6], int *selected_level, int *selected_theme);
 void save_game_state(int game_finished);
 void load_game_state(int *game_finished);
-void change_mode(int theme,SDL_Renderer *renderer);
+void change_mode(int dark_clear,SDL_Renderer *renderer);
 int decrypt();
+void encrypt(int dark_clear);
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -115,8 +117,8 @@ int memory_game()
 
 
 	// Couleur de fond
-	int theme = decrypt();
-    change_mode(theme,renderer);
+	int dark_clear = decrypt();
+    change_mode(dark_clear,renderer);
 	SDL_RenderClear(renderer);
 
 
@@ -392,6 +394,42 @@ int memory_game()
 	int continue_button_x = (WINDOW_WIDTH / 2) - (CARD_WIDTH_HEIGHT / 2);
 	int continue_button_y = (WINDOW_HEIGHT / 2) + 300;
 
+	// chargement bouton du dark theme 
+	SDL_Surface *image_Sun = NULL;
+	image_Sun = SDL_LoadBMP("src/images/sun.bmp");
+	if (image_Sun == NULL) {
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("chargement image sun");
+	}
+
+	SDL_Texture *texture_Sun = NULL;
+	texture_Sun = SDL_CreateTextureFromSurface(renderer, image_Sun);
+	SDL_FreeSurface(image_Sun);
+	if (texture_Sun == NULL) {
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("creation texture sun");
+	}
+
+
+	SDL_Surface *image_Moon = NULL;
+	image_Moon = SDL_LoadBMP("src/images/moon.bmp");
+	if (image_Moon == NULL) {
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("chargement image moon");
+	}
+
+	SDL_Texture *texture_Moon = NULL;
+	texture_Moon = SDL_CreateTextureFromSurface(renderer, image_Moon);
+	SDL_FreeSurface(image_Moon);
+	if (texture_Moon == NULL) {
+		SDL_destroy_window_renderer(renderer, window);
+		SDL_exit_with_error("creation texture moon");
+	}
+
+	int Sun_Moon_x = WINDOW_WIDTH  - ((BOUTON_BW_HEIGHT / 2) * 3);
+	int Sun_Moon_y = (WINDOW_HEIGHT / 4) - 100;
+
+
 
 	// Matrices représentant le plateau de jeu
 	int game_board_size = 0;
@@ -617,6 +655,14 @@ int memory_game()
 
 	// Affichage choix du niveau et du thème
 	if (!selected_theme && !selected_level && !game_started) {
+		if (dark_clear == 0){
+			SDL_texture_renderer(renderer, window, texture_Sun, Sun_Moon_x, Sun_Moon_y);
+			change_mode(dark_clear,renderer);
+		}
+		else if (dark_clear == 0){
+			SDL_texture_renderer(renderer, window, texture_Moon, Sun_Moon_x, Sun_Moon_y);
+			change_mode(dark_clear,renderer);
+		}
 		SDL_texture_renderer(renderer, window, texture_name, name_x, name_y);
 		SDL_texture_renderer(renderer, window, texture_animal_theme, animal_theme_x, animal_theme_y);
 		SDL_texture_renderer(renderer, window, texture_pastry_theme, pastry_theme_x, pastry_theme_y);
@@ -665,6 +711,23 @@ int memory_game()
                         } else if (!selected_level && !game_finished && (in_zone(event.button.x, event.button.y, continue_button_x, continue_button_x + CARD_WIDTH_HEIGHT, continue_button_y, continue_button_y + LABEL_HEIGHT))) {
 							selected_level = 4;
                         }
+
+						// Changement de mode
+						
+						if (!dark_clear && (in_zone(event.button.x, event.button.y, Sun_Moon_x, Sun_Moon_x + BOUTON_BW_HEIGHT,  Sun_Moon_y, Sun_Moon_y + BOUTON_BW_HEIGHT))){
+							dark_clear = 1;
+							encrypt(dark_clear); 
+							printf("pos moon x :%d\n",Sun_Moon_x+BOUTON_BW_HEIGHT);
+							printf("pos moon y :%d\n",Sun_Moon_y+BOUTON_BW_HEIGHT);
+							printf("dark: %d\n",dark_clear);
+							
+						}else if(in_zone(event.button.x, event.button.y, Sun_Moon_x, Sun_Moon_x + BOUTON_BW_HEIGHT, Sun_Moon_y, Sun_Moon_y + BOUTON_BW_HEIGHT)){
+							dark_clear = 0;
+							encrypt(dark_clear); 
+							printf("clear: %d\n",dark_clear);
+							
+						}
+						
 
 						// Sélection de la première carte
 						if ((game_started) && (!first_selection) && (!second_selection)) {
@@ -1005,6 +1068,7 @@ void position_cards(Card *cards, int rows, int game_board[rows][6], int selected
 
 // Fonction permettant de vérifier la zone de clic
 int in_zone(int x, int y, int x_min, int x_max, int y_min, int y_max) {
+	printf("x: %d, y:%d, x_min:%d x_max:%d\n");
 	if ((x >= x_min) && (x <= x_max) && (y >= y_min) && (y <= y_max)) {
 		return 1;
 	}
@@ -1253,7 +1317,7 @@ void change_mode(int theme,SDL_Renderer *renderer){
 }
 
 int decrypt() {
-        system("openssl aes-256-cbc -d -a -pbkdf2 -in conf.txt.enc -out conf.txt.new -pass env:esgi");
+        system("openssl aes-256-cbc -d -a -pbkdf2 -in conf.txt.enc -out conf.txt.new -pass pass:esgi");
         FILE *file = fopen("conf.txt.new", "r");
         int theme = -1;
         fscanf(file, "%d", &theme);
@@ -1264,15 +1328,16 @@ int decrypt() {
 }
 
 
+
+
 void encrypt(int theme) {
     FILE *file = fopen("conf.txt", "w");
     
     fprintf(file, "%d", theme);
     fclose(file);
 
-    char command[100];
-    snprintf(command, sizeof(command), "openssl aes-256-cbc -a -pbkdf2 -in conf.txt -out conf.txt.enc");
-    system(command);
-    snprintf(command, sizeof(command),"del conf.txt");
-    system(command);
+    system( "openssl aes-256-cbc -a -pbkdf2 -in conf.txt -out conf.txt.enc -pass pass:esgi");
+
+    
+    system("del conf.txt");
 }
