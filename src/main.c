@@ -11,6 +11,7 @@
 #include <openssl/aes.h>
 #include <openssl/rand.h>
 #include <sqlite3.h>
+#include <SDL_mixer.h>
 
 
 
@@ -71,6 +72,7 @@ void load_game_state(int *game_finished);
 void change_mode(int dark_mode, SDL_Renderer *renderer);
 int decrypt();
 void encrypt(int dark_mode);
+void play_music();
 
 
 
@@ -813,6 +815,12 @@ int memory_game()
                 }
             }
 
+			play_music();
+			if (Mix_PlayingMusic()) {
+				printf("De la musique est en cours de lecture.\n");
+			} else {
+				printf("Aucune musique n'est en cours de lecture.\n");
+			}
 			SDL_RenderPresent(renderer);
 			game_started = 1;
 		}
@@ -873,7 +881,6 @@ int memory_game()
 					return 1;
 				}
 			}
-
 			SDL_RenderPresent(renderer);
 			first_selection = 0;
 			second_selection = 0;
@@ -1387,4 +1394,20 @@ void menu(int game_finished, int dark_mode, SDL_Texture *texture_dark_mode, SDL_
 		SDL_texture_renderer(renderer, window, texture_continue_button, continue_button_x, continue_button_y);
 	}
 	SDL_RenderPresent(renderer);
+}
+
+void play_music(){
+
+	Mix_Music *music;
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 1024) == -1) {
+		printf("Erreur d'initialisation de l'API Mixer : %s\n", Mix_GetError());
+	}
+
+	music = Mix_LoadMUS("src/music/1.mp3");
+	if (music == NULL) {
+		printf("Erreur de chargement de la musique : %s\n", Mix_GetError());
+	}
+
+	Mix_PlayMusic(music, -1);
+	Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
 }
