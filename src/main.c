@@ -7,6 +7,9 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <time.h>
+#include <openssl/aes.h>
+#include <openssl/rand.h>
+
 
 
 /* ----------------------------------------------------------------------------------------------------------------
@@ -86,10 +89,17 @@ int memory_game()
 	// Initialisation générateur nombre aléatoire
 	srand(time(NULL));
 
-
 	// Initialisation SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_exit_with_error("initialisation SDL");
+    }
+
+	
+	// Création icone
+	SDL_Surface *memory_icon = NULL;
+	memory_icon = SDL_LoadBMP("src/images/icone.bmp");
+	if (memory_icon == NULL) {
+        SDL_exit_with_error("chargement icone");
     }
 
 
@@ -99,6 +109,8 @@ int memory_game()
     if (SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_HEIGHT, 0, &window, &renderer) != 0) {
         SDL_exit_with_error("creation fenetre et rendu");
     }
+	SDL_SetWindowIcon(window, memory_icon);
+	SDL_SetWindowTitle(window, "Memory Matching Game");
 
 
 	// Couleur de fond
@@ -110,6 +122,7 @@ int memory_game()
     SDL_Surface *image_name = NULL;
     image_name = SDL_LoadBMP("src/images/game_name.bmp");
     if (image_name == NULL) {
+		SDL_FreeSurface(memory_icon);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("chargement image nom");
     }
@@ -117,6 +130,7 @@ int memory_game()
     texture_name = SDL_CreateTextureFromSurface(renderer, image_name);
     SDL_FreeSurface(image_name);
     if (texture_name == NULL) {
+		SDL_FreeSurface(memory_icon);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("creation texture nom");
     }
@@ -128,6 +142,7 @@ int memory_game()
     SDL_Surface *image_bravo = NULL;
     image_bravo = SDL_LoadBMP("src/images/bravo.bmp");
     if (image_bravo == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("chargement image bravo");
@@ -136,6 +151,7 @@ int memory_game()
     texture_bravo = SDL_CreateTextureFromSurface(renderer, image_bravo);
     SDL_FreeSurface(image_bravo);
     if (texture_bravo == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("creation texture bravo");
@@ -148,6 +164,7 @@ int memory_game()
 	SDL_Surface *image_back = NULL;
 	image_back = SDL_LoadBMP("src/images/back.bmp");
 	if (image_back == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
         SDL_destroy_window_renderer(renderer, window);
@@ -157,6 +174,7 @@ int memory_game()
 	texture_back = SDL_CreateTextureFromSurface(renderer, image_back);
 	SDL_FreeSurface(image_back);
 	if (texture_back == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
         SDL_destroy_window_renderer(renderer, window);
@@ -173,6 +191,7 @@ int memory_game()
 	SDL_Surface *image_animal_theme = NULL;
 	image_animal_theme = SDL_LoadBMP("src/images/animals/2.bmp");
 	if (image_animal_theme == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -183,6 +202,7 @@ int memory_game()
 	texture_animal_theme = SDL_CreateTextureFromSurface(renderer, image_animal_theme);
 	SDL_FreeSurface(image_animal_theme);
 	if (texture_animal_theme == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -197,6 +217,7 @@ int memory_game()
 	SDL_Surface *image_pastry_theme = NULL;
 	image_pastry_theme = SDL_LoadBMP("src/images/pastries/1.bmp");
 	if (image_pastry_theme == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -208,6 +229,7 @@ int memory_game()
 	texture_pastry_theme = SDL_CreateTextureFromSurface(renderer, image_pastry_theme);
 	SDL_FreeSurface(image_pastry_theme);
 	if (texture_pastry_theme == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -223,6 +245,7 @@ int memory_game()
 	SDL_Surface *image_painting_theme = NULL;
 	image_painting_theme = SDL_LoadBMP("src/images/paintings/3.bmp");
 	if (image_painting_theme == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -235,6 +258,7 @@ int memory_game()
 	texture_painting_theme = SDL_CreateTextureFromSurface(renderer, image_painting_theme);
 	SDL_FreeSurface(image_painting_theme);
 	if (texture_painting_theme == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -251,6 +275,7 @@ int memory_game()
     SDL_Surface *image_level_1 = NULL;
     image_level_1 = SDL_LoadBMP("src/images/level1.bmp");
     if (image_level_1 == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -262,6 +287,7 @@ int memory_game()
     texture_level_1 = SDL_CreateTextureFromSurface(renderer, image_level_1);
     SDL_FreeSurface(image_level_1);
     if (texture_level_1 == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -277,6 +303,7 @@ int memory_game()
     SDL_Surface *image_level_2 = NULL;
     image_level_2 = SDL_LoadBMP("src/images/level2.bmp");
     if (image_level_2 == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -289,6 +316,7 @@ int memory_game()
     texture_level_2 = SDL_CreateTextureFromSurface(renderer, image_level_2);
     SDL_FreeSurface(image_level_2);
     if (texture_level_2 == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -305,6 +333,7 @@ int memory_game()
     SDL_Surface *image_level_3 = NULL;
     image_level_3 = SDL_LoadBMP("src/images/level3.bmp");
     if (image_level_3 == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -318,6 +347,7 @@ int memory_game()
     texture_level_3 = SDL_CreateTextureFromSurface(renderer, image_level_3);
     SDL_FreeSurface(image_level_3);
     if (texture_level_3 == NULL) {
+		SDL_FreeSurface(memory_icon);
 		SDL_clear_name_texture(texture_name);
 		SDL_clear_bravo_texture(texture_bravo);
 		SDL_clear_back_texture(texture_back);
@@ -335,11 +365,12 @@ int memory_game()
 	SDL_Surface *image_continue_button = NULL;
     image_continue_button = SDL_LoadBMP("src/images/continue.bmp");
     if (image_continue_button == NULL) {
-			SDL_clear_name_texture(texture_name);
-			SDL_clear_bravo_texture(texture_bravo);
-			SDL_clear_back_texture(texture_back);
-			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
-			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+		SDL_FreeSurface(memory_icon);
+		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
+		SDL_clear_back_texture(texture_back);
+		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+		SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("chargement image bouton continue");
     }
@@ -347,11 +378,12 @@ int memory_game()
     texture_continue_button = SDL_CreateTextureFromSurface(renderer, image_continue_button);
     SDL_FreeSurface(image_continue_button);
     if (texture_continue_button == NULL) {
-			SDL_clear_name_texture(texture_name);
-			SDL_clear_bravo_texture(texture_bravo);
-			SDL_clear_back_texture(texture_back);
-			SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
-			SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
+		SDL_FreeSurface(memory_icon);
+		SDL_clear_name_texture(texture_name);
+		SDL_clear_bravo_texture(texture_bravo);
+		SDL_clear_back_texture(texture_back);
+		SDL_clear_theme_texture(texture_animal_theme, texture_pastry_theme, texture_painting_theme);
+		SDL_clear_level_texture(texture_level_1, texture_level_2, texture_level_3);
         SDL_destroy_window_renderer(renderer, window);
         SDL_exit_with_error("creation texture bouton continue");
     }
@@ -403,6 +435,7 @@ int memory_game()
 		SDL_Surface *image_animal = NULL;
 		image_animal = SDL_LoadBMP(path_animal[i]);
 		if (image_animal == NULL) {
+			SDL_FreeSurface(memory_icon);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
@@ -419,6 +452,7 @@ int memory_game()
 		textures_animal[i] = SDL_CreateTextureFromSurface(renderer, image_animal);
 		SDL_FreeSurface(image_animal);
 		if (textures_animal[i] == NULL) {
+			SDL_FreeSurface(memory_icon);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
@@ -456,6 +490,7 @@ int memory_game()
 		SDL_Surface *image_pastry = NULL;
 		image_pastry = SDL_LoadBMP(path_pastry[i]);
 		if (image_pastry == NULL) {
+			SDL_FreeSurface(memory_icon);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
@@ -475,6 +510,7 @@ int memory_game()
 		textures_pastry[i] = SDL_CreateTextureFromSurface(renderer, image_pastry);
 		SDL_FreeSurface(image_pastry);
 		if (textures_pastry[i] == NULL) {
+			SDL_FreeSurface(memory_icon);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
@@ -515,6 +551,7 @@ int memory_game()
 		SDL_Surface *image_painting = NULL;
 		image_painting = SDL_LoadBMP(path_painting[i]);
 		if (image_painting == NULL) {
+			SDL_FreeSurface(memory_icon);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
@@ -535,6 +572,7 @@ int memory_game()
 		textures_painting[i] = SDL_CreateTextureFromSurface(renderer, image_painting);
 		SDL_FreeSurface(image_painting);
 		if (textures_pastry[i] == NULL) {
+			SDL_FreeSurface(memory_icon);
 			SDL_clear_name_texture(texture_name);
 			SDL_clear_bravo_texture(texture_bravo);
 			SDL_clear_back_texture(texture_back);
@@ -799,6 +837,15 @@ int memory_game()
 			second_selection = 0;
 		}
 	}
+
+	for (int x = 0; x < 12; x++) {
+		SDL_DestroyTexture(textures_animal[x]);
+		SDL_DestroyTexture(textures_pastry[x]);
+		SDL_DestroyTexture(textures_painting[x]);
+		}
+	SDL_FreeSurface(memory_icon);
+	SDL_clear_renderer(renderer);
+	SDL_DestroyTexture(texture_bravo);
 	return 1;
 }
 
@@ -1059,11 +1106,10 @@ int end_game(SDL_Renderer *renderer, SDL_Window *window, SDL_Texture *texture_br
 		SDL_DestroyTexture(textures_pastry[x]);
 		SDL_DestroyTexture(textures_painting[x]);
 	}
-
 	SDL_clear_renderer(renderer);
 	SDL_texture_renderer(renderer, window, texture_bravo, bravo_x, bravo_y);
 	SDL_RenderPresent(renderer);
-	SDL_Delay(3000);
+	SDL_Delay(1000);
 	SDL_clear_renderer(renderer);
 	SDL_DestroyTexture(texture_bravo);
 	return 1;
